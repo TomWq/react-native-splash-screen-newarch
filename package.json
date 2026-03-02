@@ -1,0 +1,42 @@
+{
+  "name": "react-native-splash-screen-newarch",
+  "version": "1.0.0",
+  "description": "A splash screen for react-native, hide when application loaded ,it works on iOS and Android.",
+  "main": "index.js",
+  "codegenConfig": {
+    "name": "rnsplashscreen",
+    "type": "modules",
+    "jsSrcsDir": "src/specs",
+    "android": {
+      "javaPackageName": "org.devio.rn.splashscreen"
+    }
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TomWq/react-native-splash-screen-newarch.git"
+  },
+  "keywords": [
+    "react-native",
+    "react-native-component",
+    "react-native-splash-screen",
+    "splash-screen",
+    "splashscreen",
+    "splash",
+    "launch-screen",
+    "launchscreen",
+    "android",
+    "ios"
+  ],
+  "author": "TomWq",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TomWq/react-native-splash-screen-newarch/issues"
+  },
+  "peerDependencies": {
+    "react-native": ">=0.84.0"
+  },
+  "homepage": "https://github.com/TomWq/react-native-splash-screen-newarch#readme"
+}
