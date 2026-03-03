@@ -14,6 +14,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "pack:dry-run": "npm pack --dry-run",
+    "npm:login": "npm login --auth-type=web",
     "publish:dry-run": "npm publish --dry-run",
     "publish:npm": "npm publish --access public",
     "release:patch": "npm version patch && npm run publish:npm",
@@ -42,7 +43,7 @@
     "url": "https://github.com/TomWq/react-native-splash-screen-newarch/issues"
   },
   "peerDependencies": {
-    "react-native": ">=0.84.0"
+    "react-native": "*"
   },
   "homepage": "https://github.com/TomWq/react-native-splash-screen-newarch#readme"
 }

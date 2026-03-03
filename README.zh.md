@@ -4,11 +4,13 @@
 
 React Native 新架构启动屏库。
 
+> 本库仅支持 **新架构**（TurboModule / Codegen），**不支持旧架构** Bridge 模式。
+
 ## 兼容性
 
 - `react-native-splash-screen-newarch@1.x`
-- React Native `>= 0.84.0`
-- New Architecture（TurboModule / Codegen）
+- 需启用 New Architecture 的 React Native
+- 仅支持 New Architecture（TurboModule / Codegen）
 
 ## 安装
 
@@ -75,7 +77,7 @@ import react_native_splash_screen
 RNSplashScreen.show()
 ```
 
-关键片段（`AppDelegate.swift`，RN 0.84 模板）：
+关键片段（`AppDelegate.swift`，React Native 新架构模板）：
 
 ```swift
 import UIKit

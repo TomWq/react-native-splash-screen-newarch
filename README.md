@@ -7,11 +7,13 @@
 
 A splash screen library for React Native New Architecture.
 
+> This library supports **New Architecture only** (TurboModule / Codegen) and does **not** support the old architecture bridge mode.
+
 ## Compatibility
 
 - `react-native-splash-screen-newarch@1.x`
-- React Native `>= 0.84.0`
-- New Architecture (TurboModule / Codegen)
+- React Native with New Architecture enabled
+- New Architecture only (TurboModule / Codegen)
 
 ## Installation
 
@@ -78,7 +80,7 @@ Call after React Native startup:
 RNSplashScreen.show()
 ```
 
-Key snippet (`AppDelegate.swift`, RN 0.84 template):
+Key snippet (`AppDelegate.swift`, React Native New Architecture template):
 
 ```swift
 import UIKit
