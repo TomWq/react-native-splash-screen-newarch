@@ -59,7 +59,11 @@ class MainActivity : ReactActivity() {
 
 ## iOS 配置
 
-在 `AppDelegate.swift` 中：
+### 1. 配置 `LaunchScreen.storyboard`
+
+使用静态布局，图片放在 `Assets.xcassets`。
+
+### 2. 在 `AppDelegate.swift` 调用
 
 ```swift
 import react_native_splash_screen
@@ -69,6 +73,58 @@ import react_native_splash_screen
 
 ```swift
 RNSplashScreen.show()
+```
+
+完整示例（`AppDelegate.swift`，RN 0.84 模板）：
+
+```swift
+import UIKit
+import React
+import React_RCTAppDelegate
+import ReactAppDependencyProvider
+import react_native_splash_screen // <--- 添加react_native_splash_screen
+
+@main
+class AppDelegate: UIResponder, UIApplicationDelegate {
+  var window: UIWindow?
+  var reactNativeDelegate: ReactNativeDelegate?
+  var reactNativeFactory: RCTReactNativeFactory?
+
+  func application(
+    _ application: UIApplication,
+    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+  ) -> Bool {
+    let delegate = ReactNativeDelegate()
+    let factory = RCTReactNativeFactory(delegate: delegate)
+    delegate.dependencyProvider = RCTAppDependencyProvider()
+
+    reactNativeDelegate = delegate
+    reactNativeFactory = factory
+    window = UIWindow(frame: UIScreen.main.bounds)
+
+    factory.startReactNative(
+      withModuleName: "你的应用名",
+      in: window,
+      launchOptions: launchOptions
+    )
+    RNSplashScreen.show() // <--- 确保在 React Native 启动后调用
+    return true
+  }
+}
+
+class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
+  override func sourceURL(for bridge: RCTBridge) -> URL? {
+    self.bundleURL()
+  }
+
+  override func bundleURL() -> URL? {
+#if DEBUG
+    RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
+#else
+    Bundle.main.url(forResource: "main", withExtension: "jsbundle")
+#endif
+  }
+}
 ```
 
 ## API
