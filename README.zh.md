@@ -28,7 +28,7 @@ SplashScreen.hide();
 
 ## Android 配置
 
-在 `MainActivity.kt` 的 `super.onCreate` 前调用：
+## 在 `MainActivity.kt` 的 `super.onCreate` 前调用：
 
 ```kotlin
 import android.os.Bundle
@@ -43,7 +43,7 @@ class MainActivity : ReactActivity() {
 }
 ```
 
-创建 `android/app/src/main/res/layout/launch_screen.xml`：
+## 创建 `android/app/src/main/res/layout/launch_screen.xml`：
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -57,6 +57,15 @@ class MainActivity : ReactActivity() {
         android:scaleType="centerCrop"
         android:src="@mipmap/launch_screen" />
 </RelativeLayout>
+```
+
+
+## 可选：透明窗口方案（你当前使用的方式）
+
+如果你希望尽量弱化 Android 12+ 的系统图标阶段，可在 **启动主题**（如 `LaunchTheme`）中加：
+
+```xml
+<item name="android:windowIsTranslucent">true</item>
 ```
 
 ## iOS 配置

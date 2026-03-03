@@ -31,7 +31,7 @@ SplashScreen.hide();
 
 ## Android Setup
 
-Call before `super.onCreate` in `MainActivity.kt`:
+### 1. Call before `super.onCreate` in `MainActivity.kt`:
 
 ```kotlin
 import android.os.Bundle
@@ -46,7 +46,7 @@ class MainActivity : ReactActivity() {
 }
 ```
 
-Create `android/app/src/main/res/layout/launch_screen.xml`:
+### 2. Create `android/app/src/main/res/layout/launch_screen.xml`:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -61,6 +61,16 @@ Create `android/app/src/main/res/layout/launch_screen.xml`:
         android:src="@mipmap/launch_screen" />
 </RelativeLayout>
 ```
+
+
+### 3. Optional: translucent window workaround
+
+If you want to reduce the visible Android 12+ system icon phase, add this to your **launch theme** (for example `LaunchTheme`):
+
+```xml
+<item name="android:windowIsTranslucent">true</item>
+```
+
 
 ## iOS Setup
 
