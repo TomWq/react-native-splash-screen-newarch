@@ -1,8 +1,8 @@
 # react-native-splash-screen-newarch
 
-[![English](https://img.shields.io/badge/Language-English-blue)](./README.md)
-[![简体中文](https://img.shields.io/badge/%E8%AF%AD%E8%A8%80-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-brightgreen)](./README.zh.md)
 [![License MIT](http://img.shields.io/badge/license-MIT-orange.svg?style=flat)](./LICENSE)
+
+Language: [English](https://github.com/TomWq/react-native-splash-screen-newarch/blob/main/README.md) | [简体中文](https://github.com/TomWq/react-native-splash-screen-newarch/blob/main/README.zh.md)
 
 面向新版 React Native 的全屏启动屏库，基于经典 `react-native-splash-screen` API 升级。
 

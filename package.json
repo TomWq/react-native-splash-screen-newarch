@@ -32,7 +32,7 @@
   "scripts": {
     "test": "node --check index.js && node --check app.plugin.js && node scripts/test-plugin.js",
     "pack:dry-run": "npm pack --dry-run",
-    "npm:login": "npm login --auth-type=web",
+    "npm:login": "npm login --auth-type=web --registry=https://registry.npmjs.org/",
     "publish:dry-run": "npm publish --dry-run",
     "publish:npm": "npm publish --access public",
     "release:patch": "npm version patch && npm run publish:npm",
