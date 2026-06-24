@@ -1,11 +1,3 @@
-/**
- * SplashScreen
- * 启动屏
- * from：http://www.devio.org
- * Author:CrazyCodeBoy
- * GitHub:https://github.com/crazycodeboy
- * Email:crazycodeboy@gmail.com
- */
 #import <React/RCTBridgeModule.h>
 #import <UIKit/UIKit.h>
 
@@ -13,4 +5,6 @@
 + (void)showSplash:(NSString*)splashScreen inRootView:(UIView*)rootView;
 + (void)show;
 + (void)hide;
++ (void)hideWithAnimation:(NSString*)animation duration:(double)duration;
++ (void)hideWithAnimation:(NSString*)animation duration:(double)duration scale:(double)scale;
 @end

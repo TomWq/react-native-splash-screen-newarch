@@ -1,18 +1,36 @@
 {
   "name": "react-native-splash-screen-newarch",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "A splash screen for react-native, hide when application loaded ,it works on iOS and Android.",
   "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "android/src",
+    "android/build.gradle",
+    "android/proguard-rules.pro",
+    "ios/RNSplashScreen.h",
+    "ios/RNSplashScreen.mm",
+    "ios/RNSplashScreenManager.swift",
+    "src",
+    "app.plugin.js",
+    "index.js",
+    "index.d.ts",
+    "react-native.config.js",
+    "react-native-splash-screen-newarch.podspec",
+    "README.md",
+    "README.zh.md",
+    "LICENSE"
+  ],
   "codegenConfig": {
     "name": "rnsplashscreen",
     "type": "modules",
     "jsSrcsDir": "src/specs",
     "android": {
-      "javaPackageName": "org.devio.rn.splashscreen"
+      "javaPackageName": "com.tomwq.rnsplashscreen"
     }
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --check index.js && node --check app.plugin.js && node scripts/test-plugin.js",
     "pack:dry-run": "npm pack --dry-run",
     "npm:login": "npm login --auth-type=web",
     "publish:dry-run": "npm publish --dry-run",
@@ -28,14 +46,18 @@
   "keywords": [
     "react-native",
     "react-native-component",
-    "react-native-splash-screen",
     "splash-screen",
     "splashscreen",
     "splash",
     "launch-screen",
     "launchscreen",
     "android",
-    "ios"
+    "ios",
+    "expo",
+    "expo-config-plugin",
+    "new-architecture",
+    "turbo-module",
+    "fullscreen"
   ],
   "author": "TomWq",
   "license": "MIT",
@@ -43,7 +65,13 @@
     "url": "https://github.com/TomWq/react-native-splash-screen-newarch/issues"
   },
   "peerDependencies": {
-    "react-native": "*"
+    "react-native": "*",
+    "expo": "*"
+  },
+  "peerDependenciesMeta": {
+    "expo": {
+      "optional": true
+    }
   },
   "homepage": "https://github.com/TomWq/react-native-splash-screen-newarch#readme"
 }

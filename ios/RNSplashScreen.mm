@@ -8,6 +8,8 @@
 @interface RNSplashScreenManager : NSObject
 + (void)show;
 + (void)hide;
++ (void)hideWithAnimation:(NSString *)animation duration:(double)duration;
++ (void)hideWithAnimation:(NSString *)animation duration:(double)duration scale:(double)scale;
 + (void)showSplash:(NSString *)splashScreen inRootView:(UIView *)rootView;
 @end
 
@@ -36,8 +38,16 @@ RCT_EXPORT_MODULE(SplashScreen)
     [RNSplashScreenManager hide];
 }
 
-RCT_EXPORT_METHOD(hide) {
-    [RNSplashScreenManager hide];
++ (void)hideWithAnimation:(NSString*)animation duration:(double)duration {
+    [RNSplashScreenManager hideWithAnimation:animation duration:duration];
+}
+
++ (void)hideWithAnimation:(NSString*)animation duration:(double)duration scale:(double)scale {
+    [RNSplashScreenManager hideWithAnimation:animation duration:duration scale:scale];
+}
+
+RCT_EXPORT_METHOD(hide:(NSString*)animation duration:(double)duration scale:(double)scale) {
+    [RNSplashScreenManager hideWithAnimation:animation duration:duration scale:scale];
 }
 
 RCT_EXPORT_METHOD(show) {

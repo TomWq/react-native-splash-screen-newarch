@@ -2,6 +2,12 @@ build/
 gradle/
 gradlew
 gradlew.bat
+!example/android/gradle/
+!example/android/gradle/wrapper/
+!example/android/gradle/wrapper/gradle-wrapper.jar
+!example/android/gradle/wrapper/gradle-wrapper.properties
+!example/android/gradlew
+!example/android/gradlew.bat
 local.properties
 # Logs
 logs

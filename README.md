@@ -2,41 +2,154 @@
 
 [![English](https://img.shields.io/badge/Language-English-blue)](./README.md)
 [![简体中文](https://img.shields.io/badge/%E8%AF%AD%E8%A8%80-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-brightgreen)](./README.zh.md)
+[![License MIT](http://img.shields.io/badge/license-MIT-orange.svg?style=flat)](./LICENSE)
 
-[![License MIT](http://img.shields.io/badge/license-MIT-orange.svg?style=flat)](https://raw.githubusercontent.com/crazycodeboy/react-native-check-box/master/LICENSE)
+面向新版 React Native 的全屏启动屏库，基于经典 `react-native-splash-screen` API 升级。
 
-A splash screen library for React Native New Architecture.
+A full-screen splash screen package for recent React Native apps. It keeps the familiar `show()` / `hide()` API, supports TurboModule through React Native codegen, keeps a bridge fallback for non-New-Architecture builds, and adds Expo config plugin support.
 
-> This library supports **New Architecture only** (TurboModule / Codegen) and does **not** support the old architecture bridge mode.
+## Features
+
+- Works with recent React Native projects without forcing `react-native >= 0.84.0`.
+- Supports New Architecture / TurboModule and keeps a bridge compatibility layer.
+- Provides `hide({ animation })` with `none`, `fade`, and configurable `scaleFade`.
+- Android can use `launch_screen.xml`, or fall back to a native fullscreen view when no XML layout exists.
+- Android fullscreen mode supports display cutout handling on Android P and newer.
+- iOS follows the current Apple Launch Screen model: static launch screen in Xcode, then this package keeps it visible until your JS calls `hide()`.
+- Expo config plugin can patch Android `MainActivity`, iOS `AppDelegate`, and optionally create the Android launch layout.
 
 ## Compatibility
 
-- `react-native-splash-screen-newarch@1.x`
-- React Native with New Architecture enabled
-- New Architecture only (TurboModule / Codegen)
+- Package: `react-native-splash-screen-newarch@2.x`
+- React Native peer dependency: `*`
+- Android: `minSdkVersion` 24 by default
+- iOS: 15.1+
+- Expo: prebuild / development-client projects only. Expo Go is not supported because this package contains native code.
+
+The example app may use a newer React Native version as a validation target, but the published package does not declare a hard peer dependency on that exact version.
+
+## Upgrading from 1.x to 2.x
+
+Version 2.x includes native namespace and module-name changes. If your app already integrated 1.x manually, update the native imports before rebuilding.
+
+### Native import changes
+
+| Area | 1.x | 2.x |
+| --- | --- | --- |
+| Android Kotlin / Java import | `org.devio.rn.splashscreen.SplashScreen` | `com.tomwq.rnsplashscreen.SplashScreen` |
+| Android library namespace | `org.devio.rn.splashscreen` | `com.tomwq.rnsplashscreen` |
+| iOS Swift import | `import react_native_splash_screen` | `import rnsplashscreen` |
+| iOS Objective-C header | `#import <react_native_splash_screen/RNSplashScreen.h>` | `#import <rnsplashscreen/RNSplashScreen.h>` |
+| CocoaPods spec file | `react-native-splash-screen.podspec` | `react-native-splash-screen-newarch.podspec` |
+
+The JavaScript package import stays the same:
+
+```ts
+import SplashScreen from 'react-native-splash-screen-newarch';
+```
+
+### What changed in 2.x
+
+- The podspec file was renamed to `react-native-splash-screen-newarch.podspec` to match the package name.
+- Android no longer exposes the old `org.devio.rn.splashscreen` package path.
+- iOS now exposes the Swift module as `rnsplashscreen`.
+- `hide(options)` now supports `fade` and `scaleFade` animations.
+- Android no longer requires an AppCompat-based theme from this package.
+- Android can fall back to a native fullscreen view when `launch_screen.xml` is missing.
+- Expo projects can use the included config plugin instead of patching native files by hand.
+
+After upgrading, run a clean native install:
+
+```bash
+cd ios
+pod install
+```
+
+If Xcode or Gradle still resolves old native symbols, clean derived data / build folders and rebuild the app.
 
 ## Installation
 
 ```bash
-npm i react-native-splash-screen-newarch
+npm install react-native-splash-screen-newarch
 ```
 
-## Usage
+For iOS React Native CLI projects, install pods after adding the package:
 
-```ts
+```bash
+cd ios
+pod install
+```
+
+## JavaScript Usage
+
+Call `hide()` after your first screen is ready. If you hide the splash screen too early, users may see a blank root view while navigation, fonts, or initial data are still loading.
+
+```tsx
+import { useEffect } from 'react';
 import SplashScreen from 'react-native-splash-screen-newarch';
 
-SplashScreen.hide();
+export default function App() {
+  useEffect(() => {
+    SplashScreen.hide({ animation: 'scaleFade', duration: 500, scale: 1.12 });
+  }, []);
+
+  return null;
+}
 ```
+
+## Expo Setup
+
+Add the config plugin to `app.json` or `app.config.js`, then run `npx expo prebuild` and rebuild your development client.
+
+```json
+{
+  "expo": {
+    "plugins": [
+      [
+        "react-native-splash-screen-newarch",
+        {
+          "android": {
+            "fullScreen": true,
+            "createLayout": true,
+            "image": "./assets/splash.png",
+            "backgroundColor": "#000000",
+            "imageResizeMode": "centerCrop"
+          },
+          "ios": true
+        }
+      ]
+    ]
+  }
+}
+```
+
+Plugin options:
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `android` | `true` | Set to `false` to skip Android patching. It can also be an object with Android options. |
+| `ios` | `true` | Set to `false` to skip iOS `AppDelegate` patching. |
+| `android.fullScreen` | `true` | Calls `SplashScreen.show(this, true)` in `MainActivity`. |
+| `android.createLayout` | `true` | Creates `android/app/src/main/res/layout/launch_screen.xml` when missing. |
+| `android.overwriteLayout` | `false` | Allows the plugin to replace an existing Android launch layout. |
+| `android.image` | `null` | Copies a `.png`, `.jpg`, `.jpeg`, `.webp`, or `.xml` file to `@drawable/launch_screen`. |
+| `android.backgroundColor` | `#000000` | Background color for the generated Android launch layout. |
+| `android.imageResizeMode` | `centerCrop` | Android `ImageView.scaleType` for the generated layout. |
+
+On iOS, the plugin only inserts the native `RNSplashScreen.show()` call. Configure the actual launch image with Xcode or Expo's generated native launch screen files.
 
 ## Android Setup
 
-### 1. Call before `super.onCreate` in `MainActivity.kt`:
+If you are not using the Expo plugin, add the native call manually.
+
+### Kotlin
+
+Call `SplashScreen.show(this, true)` before `super.onCreate(savedInstanceState)`.
 
 ```kotlin
 import android.os.Bundle
 import com.facebook.react.ReactActivity
-import org.devio.rn.splashscreen.SplashScreen
+import com.tomwq.rnsplashscreen.SplashScreen
 
 class MainActivity : ReactActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,89 +159,195 @@ class MainActivity : ReactActivity() {
 }
 ```
 
-### 2. Create `android/app/src/main/res/layout/launch_screen.xml`:
+### Java
+
+```java
+import android.os.Bundle;
+import com.facebook.react.ReactActivity;
+import com.tomwq.rnsplashscreen.SplashScreen;
+
+public class MainActivity extends ReactActivity {
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    SplashScreen.show(this, true);
+    super.onCreate(savedInstanceState);
+  }
+}
+```
+
+### Android Launch Layout
+
+The library looks for `android/app/src/main/res/layout/launch_screen.xml`. If the layout exists, it is used as the fullscreen splash content.
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#000000">
+
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
-        android:src="@mipmap/launch_screen" />
-</RelativeLayout>
+        android:src="@drawable/launch_screen" />
+</FrameLayout>
 ```
 
+### Android No-XML Fallback
 
-### 3. Optional: translucent window workaround
+If `launch_screen.xml` does not exist, the library creates a lightweight native `FrameLayout` at runtime. It then looks for an image named `launch_screen` in `drawable` first, then in `mipmap`.
 
-If you want to reduce the visible Android 12+ system icon phase, add this to your **launch theme** (for example `LaunchTheme`):
+Recommended fallback layout:
+
+```text
+android/app/src/main/res/drawable/launch_screen.png
+```
+
+If neither a layout nor image resource exists, Android shows a fullscreen black background until `hide()` runs.
+
+### Android 12+ System Splash Note
+
+Android owns the earliest system splash phase on Android 12 and newer. This package takes over immediately after your `Activity` starts, so it can show a full-screen layout or image during React Native startup. If you want to soften the handoff from the system splash phase, you can test a translucent launch theme:
 
 ```xml
 <item name="android:windowIsTranslucent">true</item>
 ```
 
+Use this only after testing cold start, back stack behavior, and theme transitions on your target Android versions.
+
+This package does not require AppCompat internally. However, your host app theme must still match your `Activity` base class. If your React Native template uses an AppCompat-backed `ReactActivity`, keep your app theme as an AppCompat descendant, for example `Theme.AppCompat.DayNight.NoActionBar`; otherwise Android can crash with `You need to use a Theme.AppCompat theme (or descendant) with this activity.`
 
 ## iOS Setup
 
-### 1. Configure `LaunchScreen.storyboard`
+iOS launch screens are static system UI. Apple expects the launch screen to be defined with a storyboard or launch screen file selected by `UILaunchStoryboardName`; custom code, networking, timers, and runtime animations do not run inside the system launch screen.
 
-Use static layout and image assets from `Assets.xcassets`.
+This package works with that model:
 
-### 2. Call in `AppDelegate.swift`
+1. Xcode renders your static `LaunchScreen.storyboard` while the app starts.
+2. `RNSplashScreen.show()` creates an overlay window from `UILaunchStoryboardName` and keeps that overlay visible while React Native loads.
+3. Your JavaScript calls `SplashScreen.hide()` when the first screen is ready, and the overlay is removed with the selected animation.
+
+### Configure the Launch Screen in Xcode
+
+1. Open `ios/YourApp.xcworkspace` in Xcode.
+2. Add your splash image to `Assets.xcassets`. Use an Image Set such as `SplashLogo` or a full-screen image such as `LaunchScreenBackground`.
+3. Open `LaunchScreen.storyboard`. If your project does not have one, create a new storyboard named `LaunchScreen.storyboard`.
+4. Set the root view background color to match your brand or app background.
+5. Add an `Image View` for the logo or full-screen image.
+6. For a centered logo, constrain the image view to the center of the root view and give it explicit width / height constraints.
+7. For a full-screen image, pin the image view to the root view edges and set the content mode to `Aspect Fill`.
+8. Select your app target, open `General` > `App Icons and Launch Screen`, and set `Launch Screen File` to `LaunchScreen`.
+9. If you manage `Info.plist` manually, make sure `UILaunchStoryboardName` is set to `LaunchScreen`.
+10. Make sure the storyboard and image assets are included in your app target membership.
+
+During development, iOS may cache launch screen assets. If a change does not appear, delete the app from the simulator or device, clean the build folder, then rebuild.
+
+On iOS, `fade` and `scaleFade` animate the overlay window created from your launch storyboard. The system launch screen itself is static and cannot run custom animations.
+
+### Swift AppDelegate
+
+Import the module:
 
 ```swift
-import react_native_splash_screen
+import rnsplashscreen
 ```
 
-Call after React Native startup:
-
-```swift
-RNSplashScreen.show()
-```
-
-Key snippet (`AppDelegate.swift`, React Native New Architecture template):
+Call `RNSplashScreen.show()` after React Native starts and before `application(_:didFinishLaunchingWithOptions:)` returns.
 
 ```swift
 import UIKit
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
-import react_native_splash_screen
+import rnsplashscreen
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
-  ...
+  var window: UIWindow?
+  var reactNativeDelegate: ReactNativeDelegate?
+  var reactNativeFactory: RCTReactNativeFactory?
 
   func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
-    ...
+    let delegate = ReactNativeDelegate()
+    let factory = RCTReactNativeFactory(delegate: delegate)
+    delegate.dependencyProvider = RCTAppDependencyProvider()
+
+    reactNativeDelegate = delegate
+    reactNativeFactory = factory
+
+    window = UIWindow(frame: UIScreen.main.bounds)
+
     factory.startReactNative(
       withModuleName: "YourAppName",
       in: window,
       launchOptions: launchOptions
     )
-    RNSplashScreen.show() // call after React Native startup
+
+    RNSplashScreen.show()
     return true
   }
 }
-
-class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {
-  ...
-}
 ```
 
+### Objective-C AppDelegate
+
+```objc
+#import <rnsplashscreen/RNSplashScreen.h>
+```
+
+Call before returning `YES` from `application:didFinishLaunchingWithOptions:`.
+
+```objc
+[RNSplashScreen show];
+return YES;
+```
 
 ## API
 
-- `show()`
-- `hide()`
+```ts
+type HideAnimation = 'none' | 'fade' | 'scaleFade';
 
----
+type HideOptions = {
+  animation?: HideAnimation;
+  duration?: number;
+  scale?: number;
+};
 
-MIT License
+SplashScreen.show(): void;
+SplashScreen.hide(options?: HideOptions): void;
+```
+
+`duration` is in milliseconds. `scale` only affects `scaleFade`; it is clamped to `1.0` - `1.3`.
+
+| Call | Behavior |
+| --- | --- |
+| `SplashScreen.hide()` | Hides immediately. |
+| `SplashScreen.hide({ animation: 'none' })` | Hides immediately. |
+| `SplashScreen.hide({ animation: 'fade' })` | Fades out with the default `400ms` duration. |
+| `SplashScreen.hide({ animation: 'scaleFade' })` | Fades out with the default `400ms` duration and `1.08` scale target. |
+| `SplashScreen.hide({ animation: 'scaleFade', duration: 500, scale: 1.12 })` | Uses a more visible scale-fade transition. |
+
+On Android, animated hide is applied to the splash content view. The dialog window itself is transparent and has no dim layer, so the app content can appear directly behind the fading splash screen instead of flashing through a black dialog background.
+
+On iOS, animated hide is applied to the launch storyboard overlay window that `RNSplashScreen.show()` adds above the app window.
+
+## Troubleshooting
+
+- iOS cannot find `rnsplashscreen`: run `cd ios && pod install`, then clean and rebuild the app.
+- iOS launch image changes do not appear: delete the app from the simulator or device because iOS may cache launch screen assets.
+- Android image does not appear: ensure the resource name is exactly `launch_screen` and is placed in `drawable`, `mipmap`, or referenced from `layout/launch_screen.xml`.
+- Expo changes do not apply: run `npx expo prebuild` again and rebuild the native app or development client.
+- The splash screen hides too early: move `SplashScreen.hide()` until after navigation, fonts, and first-screen data are ready.
+
+## References
+
+- [Apple Human Interface Guidelines: Launching](https://developer.apple.com/design/human-interface-guidelines/launching)
+- [Apple Info.plist key: UILaunchStoryboardName](https://developer.apple.com/documentation/bundleresources/information-property-list/uilaunchstoryboardname)
+
+## License
+
+MIT

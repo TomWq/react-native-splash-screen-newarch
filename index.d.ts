@@ -1,6 +1,14 @@
 declare module "react-native-splash-screen-newarch" {
+    type HideAnimation = "none" | "fade" | "scaleFade";
+
+    interface HideOptions {
+        animation?: HideAnimation;
+        duration?: number;
+        scale?: number;
+    }
+
     interface SplashScreenModule {
-        hide(): void;
+        hide(options?: HideOptions): void;
         show(): void;
     }
 
