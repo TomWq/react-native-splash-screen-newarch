@@ -108,6 +108,9 @@ export default function App() {
       [
         "react-native-splash-screen-newarch",
         {
+          "image": "./assets/splash.png",
+          "backgroundColor": "#000000",
+          "resizeMode": "contain",
           "android": {
             "fullScreen": true,
             "createLayout": true,
@@ -115,7 +118,11 @@ export default function App() {
             "backgroundColor": "#000000",
             "imageResizeMode": "centerCrop"
           },
-          "ios": true
+          "ios": {
+            "image": "./assets/splash.png",
+            "backgroundColor": "#000000",
+            "resizeMode": "contain"
+          }
         }
       ]
     ]
@@ -127,16 +134,26 @@ Plugin 选项：
 
 | 选项 | 默认值 | 说明 |
 | --- | --- | --- |
+| `image` | `null` | Android 和 iOS 共用的启动图；平台专属配置会覆盖它。 |
+| `backgroundColor` | `#000000` | Android 和 iOS 共用的启动背景色；平台专属配置会覆盖它。 |
+| `resizeMode` | `contain` | iOS 共用图片显示模式，可选 `contain` 或 `cover`。 |
 | `android` | `true` | 设为 `false` 可跳过 Android 修改；也可以传对象配置 Android。 |
-| `ios` | `true` | 设为 `false` 可跳过 iOS `AppDelegate` 修改。 |
+| `ios` | `true` | 设为 `false` 可跳过 iOS 修改；也可以传对象配置 iOS。 |
 | `android.fullScreen` | `true` | 在 `MainActivity` 中调用 `SplashScreen.show(this, true)`。 |
-| `android.createLayout` | `true` | 当 Android 缺少 `android/app/src/main/res/layout/launch_screen.xml` 时自动创建。 |
+| `android.createLayout` | `true` | 当 Android 缺少 `android/app/src/main/res/layout/launch_screen.xml` 时自动创建，同时生成 Android 12+ 系统启动屏资源和 Activity theme。 |
 | `android.overwriteLayout` | `false` | 允许插件覆盖已有 Android 启动 layout。 |
 | `android.image` | `null` | 将 `.png`、`.jpg`、`.jpeg`、`.webp` 或 `.xml` 文件复制为 `@drawable/launch_screen`。 |
 | `android.backgroundColor` | `#000000` | 自动生成 Android 启动 layout 时使用的背景色。 |
 | `android.imageResizeMode` | `centerCrop` | 自动生成 layout 中 `ImageView.scaleType` 的取值。 |
+| `android.systemImage` | `false` | 是否把启动图作为 Android 12+ 系统启动屏 icon。全屏图建议保持 `false`，因为 Android 会把这个字段限制为图标尺寸。 |
+| `android.windowIsTranslucent` | `false` | 让 Android 系统 starting window 透明，避免先看到一帧纯色系统启动页。开启前建议在目标机型上测试冷启动、最近任务和后台拉起表现。 |
+| `ios.image` | `null` | 将 `.png`、`.jpg`、`.jpeg` 或 `.pdf` 文件复制到 `Images.xcassets/SplashScreenImage.imageset`。 |
+| `ios.backgroundColor` | `#000000` | 创建 `Images.xcassets/SplashScreenBackground.colorset`，并用于启动 storyboard。 |
+| `ios.resizeMode` | `contain` | `contain` 使用 `scaleAspectFit`，`cover` 使用 `scaleAspectFill`。 |
 
-iOS 侧，插件只负责插入原生 `RNSplashScreen.show()` 调用。实际启动图仍然需要通过 Xcode 或 Expo 生成的原生 Launch Screen 文件配置。
+Android 侧，生成的 `Theme.App.SplashScreen` 会接住 Android 12+ 最早的系统启动屏阶段。Android 会把 `windowSplashScreenAnimatedIcon` 限制成图标尺寸，所以插件默认让这个 icon 透明，只用配置的背景色接住系统阶段。如果不希望看到这一帧纯色系统页，可以开启 `android.windowIsTranslucent`。`MainActivity` 启动后，本库再使用全屏 `launch_screen.xml` 继续保持启动屏，直到 JavaScript 调用 `hide()`。
+
+iOS 侧，插件会把 `UILaunchStoryboardName` 设置为 `SplashScreen`，创建 `SplashScreen.storyboard`，把它加入 Xcode project resources，并插入原生 `RNSplashScreen.show()` 调用。如果没有配置 iOS 图片，生成的 storyboard 只显示配置的背景色。
 
 ## Android 配置
 

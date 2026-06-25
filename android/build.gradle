@@ -70,4 +70,5 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     testImplementation 'junit:junit:4.12'
     implementation "com.facebook.react:react-android"
+    implementation "androidx.core:core-splashscreen:1.2.0"
 }

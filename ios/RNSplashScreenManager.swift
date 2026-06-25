@@ -74,7 +74,7 @@ public final class RNSplashScreenManager: NSObject {
         waiting = false
 
         if let loadingView, loadingView.superview == nil {
-            rootView.addSubview(loadingView)
+            pinLoadingView(loadingView, to: rootView)
         }
     }
 
@@ -142,7 +142,7 @@ public final class RNSplashScreenManager: NSObject {
         )
 
         if let loadingView, loadingView.superview == nil {
-            containerView.addSubview(loadingView)
+            pinLoadingView(loadingView, to: containerView)
             loadingWindow = overlayWindow
             previousKeyWindow = currentKeyWindow()
             overlayWindow.makeKeyAndVisible()
@@ -226,6 +226,19 @@ public final class RNSplashScreenManager: NSObject {
         view.setNeedsLayout()
         view.layoutIfNeeded()
         return view
+    }
+
+    private class func pinLoadingView(_ loadingView: UIView, to containerView: UIView) {
+        loadingView.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(loadingView)
+        NSLayoutConstraint.activate([
+            loadingView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            loadingView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            loadingView.topAnchor.constraint(equalTo: containerView.topAnchor),
+            loadingView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+        ])
+        containerView.setNeedsLayout()
+        containerView.layoutIfNeeded()
     }
 
     private class func createStoryboardView(named name: String) -> UIView? {

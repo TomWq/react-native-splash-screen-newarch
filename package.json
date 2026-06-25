@@ -1,6 +1,6 @@
 {
   "name": "react-native-splash-screen-newarch",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A splash screen for react-native, hide when application loaded ,it works on iOS and Android.",
   "main": "index.js",
   "types": "index.d.ts",

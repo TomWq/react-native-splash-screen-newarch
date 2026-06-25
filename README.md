@@ -108,6 +108,9 @@ Add the config plugin to `app.json` or `app.config.js`, then run `npx expo prebu
       [
         "react-native-splash-screen-newarch",
         {
+          "image": "./assets/splash.png",
+          "backgroundColor": "#000000",
+          "resizeMode": "contain",
           "android": {
             "fullScreen": true,
             "createLayout": true,
@@ -115,7 +118,11 @@ Add the config plugin to `app.json` or `app.config.js`, then run `npx expo prebu
             "backgroundColor": "#000000",
             "imageResizeMode": "centerCrop"
           },
-          "ios": true
+          "ios": {
+            "image": "./assets/splash.png",
+            "backgroundColor": "#000000",
+            "resizeMode": "contain"
+          }
         }
       ]
     ]
@@ -127,16 +134,26 @@ Plugin options:
 
 | Option | Default | Description |
 | --- | --- | --- |
+| `image` | `null` | Shared splash image used by Android and iOS unless a platform-specific image is set. |
+| `backgroundColor` | `#000000` | Shared splash background color used by Android and iOS unless a platform-specific color is set. |
+| `resizeMode` | `contain` | Shared iOS image content mode. Use `contain` or `cover`. |
 | `android` | `true` | Set to `false` to skip Android patching. It can also be an object with Android options. |
-| `ios` | `true` | Set to `false` to skip iOS `AppDelegate` patching. |
+| `ios` | `true` | Set to `false` to skip iOS patching. It can also be an object with iOS options. |
 | `android.fullScreen` | `true` | Calls `SplashScreen.show(this, true)` in `MainActivity`. |
-| `android.createLayout` | `true` | Creates `android/app/src/main/res/layout/launch_screen.xml` when missing. |
+| `android.createLayout` | `true` | Creates `android/app/src/main/res/layout/launch_screen.xml` when missing, plus Android 12+ system splash resources and activity theme. |
 | `android.overwriteLayout` | `false` | Allows the plugin to replace an existing Android launch layout. |
 | `android.image` | `null` | Copies a `.png`, `.jpg`, `.jpeg`, `.webp`, or `.xml` file to `@drawable/launch_screen`. |
 | `android.backgroundColor` | `#000000` | Background color for the generated Android launch layout. |
 | `android.imageResizeMode` | `centerCrop` | Android `ImageView.scaleType` for the generated layout. |
+| `android.systemImage` | `false` | Uses the splash image as the Android 12+ system splash icon. Keep this `false` for full-screen artwork because Android constrains this field to icon size. |
+| `android.windowIsTranslucent` | `false` | Makes the Android system starting window transparent to avoid a solid-color pre-splash frame. Test cold start, recents, and background launch behavior on target devices before enabling. |
+| `ios.image` | `null` | Copies a `.png`, `.jpg`, `.jpeg`, or `.pdf` file to `Images.xcassets/SplashScreenImage.imageset`. |
+| `ios.backgroundColor` | `#000000` | Creates `Images.xcassets/SplashScreenBackground.colorset` and uses it in the launch storyboard. |
+| `ios.resizeMode` | `contain` | Uses `scaleAspectFit` for `contain` and `scaleAspectFill` for `cover`. |
 
-On iOS, the plugin only inserts the native `RNSplashScreen.show()` call. Configure the actual launch image with Xcode or Expo's generated native launch screen files.
+On Android, the generated `Theme.App.SplashScreen` handles the earliest Android 12+ system splash phase. Android constrains `windowSplashScreenAnimatedIcon` to icon size, so the plugin defaults that icon to transparent and uses the configured background color for the system phase. Enable `android.windowIsTranslucent` if you prefer to avoid seeing that solid-color system frame. The full-screen `launch_screen.xml` layout is then used by this package after `MainActivity` starts, keeping the splash visible until your JavaScript calls `hide()`.
+
+On iOS, the plugin sets `UILaunchStoryboardName` to `SplashScreen`, creates `SplashScreen.storyboard`, adds it to the Xcode project resources, and inserts the native `RNSplashScreen.show()` call. If no iOS image is configured, the generated storyboard uses only the configured background color.
 
 ## Android Setup
 
