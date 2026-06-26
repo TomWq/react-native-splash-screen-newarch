@@ -5,11 +5,14 @@ const pkg = require('./package.json');
 
 const ANDROID_IMPORT = 'import com.tomwq.rnsplashscreen.SplashScreen';
 const EXPO_ANDROID_IMPORT = 'import expo.modules.splashscreen.SplashScreenManager';
+const ANDROID_POST_SPLASH_SCREEN_THEME_META_DATA =
+  'com.tomwq.rnsplashscreen.POST_SPLASH_SCREEN_THEME';
 const IOS_SWIFT_IMPORT = 'import rnsplashscreen';
 const IOS_OBJC_IMPORT = '#import <rnsplashscreen/RNSplashScreen.h>';
 const IOS_LAUNCH_STORYBOARD = 'SplashScreen';
 const IOS_IMAGESET_NAME = 'SplashScreenImage';
 const IOS_COLORSET_NAME = 'SplashScreenBackground';
+const IOS_MAX_WAIT_TIME_PLIST_KEY = 'RNSplashScreenMaxWaitTime';
 let runOncePlugin;
 
 function requireExpoConfigPlugins() {
@@ -48,11 +51,13 @@ function withReactNativeSplashScreen(config, props = {}) {
   const options = normalizeOptions(props);
 
   if (options.android) {
+    if (options.createAndroidLayout) {
+      config = withAndroidSplashScreenTheme(config, options);
+    }
     config = withAndroidSplashScreen(config, options);
     if (options.createAndroidLayout) {
       config = withAndroidLaunchScreenLayout(config, options);
       config = withAndroidSystemSplashScreen(config, options);
-      config = withAndroidSplashScreenTheme(config);
     }
   }
 
@@ -88,6 +93,22 @@ function normalizeOptions(props) {
     image: androidOptions.image || props.image || null,
     imageResizeMode:
       androidOptions.imageResizeMode || props.imageResizeMode || 'centerCrop',
+    imageWidth: readAndroidDimension(
+      androidOptions.imageWidth,
+      props.androidImageWidth,
+      null
+    ),
+    imageHeight: readAndroidDimension(
+      androidOptions.imageHeight,
+      props.androidImageHeight,
+      null
+    ),
+    imageGravity:
+      androidOptions.imageGravity || props.androidImageGravity || 'center',
+    androidPostSplashScreenTheme: normalizeAndroidStyleResource(
+      androidOptions.postSplashScreenTheme || props.androidPostSplashScreenTheme
+    ),
+    resolvedAndroidPostSplashScreenTheme: null,
     androidSystemImage: readBoolean(
       androidOptions.systemImage,
       props.androidSystemImage,
@@ -102,6 +123,21 @@ function normalizeOptions(props) {
       iosOptions.backgroundColor || props.backgroundColor || '#000000',
     iosImage: iosOptions.image || props.image || null,
     iosResizeMode: iosOptions.resizeMode || props.resizeMode || 'contain',
+    iosImageWidth: readPositiveNumber(
+      iosOptions.imageWidth,
+      props.iosImageWidth,
+      null
+    ),
+    iosImageHeight: readPositiveNumber(
+      iosOptions.imageHeight,
+      props.iosImageHeight,
+      null
+    ),
+    iosMaxWaitTime: readNonNegativeNumber(
+      iosOptions.maxWaitTime,
+      props.iosMaxWaitTime,
+      null
+    ),
   };
 }
 
@@ -112,6 +148,61 @@ function readBoolean(...values) {
     }
   }
   return values[values.length - 1];
+}
+
+function readPositiveNumber(...values) {
+  for (const value of values) {
+    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+      return value;
+    }
+  }
+  return values[values.length - 1];
+}
+
+function readNonNegativeNumber(...values) {
+  for (const value of values) {
+    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+      return value;
+    }
+  }
+  return values[values.length - 1];
+}
+
+function readAndroidDimension(...values) {
+  for (const value of values) {
+    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+      return `${value}dp`;
+    }
+
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+  return values[values.length - 1];
+}
+
+function normalizeAndroidStyleResource(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  if (
+    trimmed.startsWith('@style/') ||
+    trimmed.startsWith('@android:style/')
+  ) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith('@')) {
+    return trimmed;
+  }
+
+  return `@style/${trimmed}`;
 }
 
 function withAndroidSplashScreen(config, options) {
@@ -145,6 +236,7 @@ function patchKotlinMainActivity(contents, fullScreen) {
   next = removeAndroidAppThemeReset(next);
 
   const call = `SplashScreen.show(this, ${fullScreen ? 'true' : 'false'})`;
+  const themeCall = 'SplashScreen.applyPostSplashScreenTheme(this)';
   const beforeSuperOnCreate =
     /(override\s+fun\s+onCreate\s*\([^)]*\)\s*\{[\s\S]*?)(\n[ \t]*)super\.onCreate\s*\(/m;
 
@@ -179,7 +271,7 @@ function patchKotlinMainActivity(contents, fullScreen) {
     replaceOrThrow(
       next,
       beforeSuperOnCreate,
-      `$1$2setTheme(R.style.AppTheme)$2super.onCreate(`
+      `$1$2${themeCall}$2super.onCreate(`
     )
   );
 }
@@ -192,6 +284,7 @@ function patchJavaMainActivity(contents, fullScreen) {
   next = removeAndroidAppThemeReset(next);
 
   const call = `SplashScreen.show(this, ${fullScreen ? 'true' : 'false'});`;
+  const themeCall = 'SplashScreen.applyPostSplashScreenTheme(this);';
   const beforeSuperOnCreate =
     /((?:protected|public)\s+void\s+onCreate\s*\([^)]*\)\s*\{[\s\S]*?)(\n[ \t]*)super\.onCreate\s*\(/m;
 
@@ -227,7 +320,7 @@ function patchJavaMainActivity(contents, fullScreen) {
     replaceOrThrow(
       next,
       beforeSuperOnCreate,
-      `$1$2setTheme(R.style.AppTheme);$2super.onCreate(`
+      `$1$2${themeCall}$2super.onCreate(`
     )
   );
 }
@@ -235,17 +328,21 @@ function patchJavaMainActivity(contents, fullScreen) {
 function removeAndroidAppThemeReset(contents) {
   return contents
     .replace(/\n[ \t]*setTheme\(R\.style\.AppTheme\);?[ \t]*\n/g, '\n')
+    .replace(
+      /\n[ \t]*SplashScreen\.applyPostSplashScreenTheme\(this\);?[ \t]*\n/g,
+      '\n'
+    )
     .replace(/\n{3,}/g, '\n\n');
 }
 
 function normalizeAndroidSplashPatch(contents) {
   return contents
     .replace(
-      /(SplashScreen\.show\(this, (?:true|false)\);?)\n[ \t]*\n([ \t]*setTheme\(R\.style\.AppTheme\);?)/g,
+      /(SplashScreen\.show\(this, (?:true|false)\);?)\n[ \t]*\n([ \t]*SplashScreen\.applyPostSplashScreenTheme\(this\);?)/g,
       '$1\n$2'
     )
     .replace(
-      /(setTheme\(R\.style\.AppTheme\);?)\n[ \t]*\n([ \t]*super\.onCreate\()/g,
+      /(SplashScreen\.applyPostSplashScreenTheme\(this\);?)\n[ \t]*\n([ \t]*super\.onCreate\()/g,
       '$1\n$2'
     );
 }
@@ -297,6 +394,8 @@ function withAndroidSystemSplashScreen(config, options) {
       const projectRoot = config.modRequest.projectRoot;
       const resDir = path.join(projectRoot, 'android/app/src/main/res');
 
+      options.resolvedAndroidPostSplashScreenTheme =
+        resolveAndroidPostSplashScreenTheme(projectRoot, options);
       writeAndroidSystemSplashResources(resDir, options);
 
       return config;
@@ -304,16 +403,142 @@ function withAndroidSystemSplashScreen(config, options) {
   ]);
 }
 
-function withAndroidSplashScreenTheme(config) {
+function withAndroidSplashScreenTheme(config, options) {
   const { AndroidConfig, withAndroidManifest } = requireExpoConfigPlugins();
 
   return withAndroidManifest(config, (config) => {
     const mainActivity = AndroidConfig.Manifest.getMainActivityOrThrow(
       config.modResults
     );
+    const existingPostSplashScreenTheme = getAndroidActivityMetaDataResource(
+      mainActivity,
+      ANDROID_POST_SPLASH_SCREEN_THEME_META_DATA
+    );
+    const currentTheme = mainActivity.$['android:theme'];
+    const postSplashScreenTheme =
+      options.androidPostSplashScreenTheme ||
+      existingPostSplashScreenTheme ||
+      (currentTheme && currentTheme !== '@style/Theme.App.SplashScreen'
+        ? currentTheme
+        : '@style/AppTheme');
+
+    options.resolvedAndroidPostSplashScreenTheme = postSplashScreenTheme;
+    upsertAndroidActivityMetaData(mainActivity, {
+      'android:name': ANDROID_POST_SPLASH_SCREEN_THEME_META_DATA,
+      'android:resource': postSplashScreenTheme,
+    });
     mainActivity.$['android:theme'] = '@style/Theme.App.SplashScreen';
     return config;
   });
+}
+
+function getAndroidActivityMetaDataResource(activity, name) {
+  const metaData = activity['meta-data'];
+  if (!Array.isArray(metaData)) {
+    return null;
+  }
+
+  const item = metaData.find((entry) => entry.$?.['android:name'] === name);
+  return item?.$?.['android:resource'] || null;
+}
+
+function upsertAndroidActivityMetaData(activity, attributes) {
+  const metaData = Array.isArray(activity['meta-data'])
+    ? activity['meta-data']
+    : [];
+  const existing = metaData.find(
+    (entry) => entry.$?.['android:name'] === attributes['android:name']
+  );
+
+  if (existing) {
+    existing.$ = { ...existing.$, ...attributes };
+  } else {
+    metaData.push({ $: attributes });
+  }
+
+  activity['meta-data'] = metaData;
+}
+
+function resolveAndroidPostSplashScreenTheme(projectRoot, options) {
+  if (options.androidPostSplashScreenTheme) {
+    return options.androidPostSplashScreenTheme;
+  }
+
+  const manifestPath = path.join(
+    projectRoot,
+    'android/app/src/main/AndroidManifest.xml'
+  );
+  const manifest = fs.existsSync(manifestPath)
+    ? fs.readFileSync(manifestPath, 'utf8')
+    : '';
+  const existingMetaDataTheme = readAndroidPostSplashScreenThemeMetaData(
+    manifest
+  );
+
+  if (existingMetaDataTheme) {
+    return existingMetaDataTheme;
+  }
+
+  const launchActivityTheme = readAndroidLaunchActivityTheme(manifest);
+  if (
+    launchActivityTheme &&
+    launchActivityTheme !== '@style/Theme.App.SplashScreen'
+  ) {
+    return launchActivityTheme;
+  }
+
+  return readAndroidApplicationTheme(manifest) || '@style/AppTheme';
+}
+
+function readAndroidPostSplashScreenThemeMetaData(manifest) {
+  const activity = readAndroidLaunchActivity(manifest);
+  if (!activity) {
+    return null;
+  }
+
+  const pattern = new RegExp(
+    `<meta-data\\b[^>]*android:name=["']${escapeRegExp(
+      ANDROID_POST_SPLASH_SCREEN_THEME_META_DATA
+    )}["'][^>]*android:resource=["']([^"']+)["'][^>]*/?>`,
+    'm'
+  );
+  return activity.match(pattern)?.[1] || null;
+}
+
+function readAndroidLaunchActivityTheme(manifest) {
+  return readAndroidAttribute(readAndroidLaunchActivity(manifest), 'theme');
+}
+
+function readAndroidApplicationTheme(manifest) {
+  const application = manifest.match(/<application\b[^>]*>/m)?.[0] || '';
+  return readAndroidAttribute(application, 'theme');
+}
+
+function readAndroidLaunchActivity(manifest) {
+  const activities = [
+    ...manifest.matchAll(/<activity\b[\s\S]*?<\/activity>/gm),
+  ].map((match) => match[0]);
+
+  return (
+    activities.find(
+      (activity) =>
+        activity.includes('android.intent.action.MAIN') &&
+        activity.includes('android.intent.category.LAUNCHER')
+    ) ||
+    activities.find((activity) =>
+      /android:name=["'][^"']*MainActivity["']/.test(activity)
+    ) ||
+    null
+  );
+}
+
+function readAndroidAttribute(source, attributeName) {
+  if (!source) {
+    return null;
+  }
+
+  const pattern = new RegExp(`android:${attributeName}=["']([^"']+)["']`);
+  return source.match(pattern)?.[1] || null;
 }
 
 function writeAndroidSystemSplashResources(resDir, options) {
@@ -430,10 +655,14 @@ function createAndroidSystemSplashDrawable(hasImage) {
 }
 
 function upsertAndroidSplashStyle(styles, options) {
+  const postSplashScreenTheme =
+    options.resolvedAndroidPostSplashScreenTheme ||
+    options.androidPostSplashScreenTheme ||
+    '@style/AppTheme';
   const splashItems = [
     '    <item name="windowSplashScreenBackground">@color/splashscreen_background</item>',
     '    <item name="windowSplashScreenAnimatedIcon">@drawable/launch_screen_system</item>',
-    '    <item name="postSplashScreenTheme">@style/AppTheme</item>',
+    `    <item name="postSplashScreenTheme">${postSplashScreenTheme}</item>`,
     '    <item name="android:windowSplashScreenBehavior">icon_preferred</item>',
   ];
 
@@ -473,6 +702,10 @@ function createAndroidLaunchScreenLayout(projectRoot, resDir, options) {
     ].join('\n');
   }
 
+  const hasImageSize = Boolean(options.imageWidth || options.imageHeight);
+  const imageWidth = options.imageWidth || (hasImageSize ? 'wrap_content' : 'match_parent');
+  const imageHeight = options.imageHeight || (hasImageSize ? 'wrap_content' : 'match_parent');
+
   return [
     '<?xml version="1.0" encoding="utf-8"?>',
     '<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"',
@@ -480,8 +713,9 @@ function createAndroidLaunchScreenLayout(projectRoot, resDir, options) {
     '    android:layout_height="match_parent"',
     `    android:background="${background}">`,
     '    <ImageView',
-    '        android:layout_width="match_parent"',
-    '        android:layout_height="match_parent"',
+    `        android:layout_width="${imageWidth}"`,
+    `        android:layout_height="${imageHeight}"`,
+    `        android:layout_gravity="${options.imageGravity}"`,
     `        android:scaleType="${options.imageResizeMode}"`,
     `        android:src="${imageResource}" />`,
     '</FrameLayout>',
@@ -501,11 +735,18 @@ function copyAndroidImageResource(projectRoot, resDir, options) {
     );
   }
 
-  const extension = path.extname(source).toLowerCase();
-  const supportedExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.xml']);
+  const extension = getAndroidDrawableExtension(source);
+  const supportedExtensions = new Set([
+    '.png',
+    '.9.png',
+    '.jpg',
+    '.jpeg',
+    '.webp',
+    '.xml',
+  ]);
   if (!supportedExtensions.has(extension)) {
     throw new Error(
-      '[react-native-splash-screen-newarch] Android splash image must be .png, .jpg, .jpeg, .webp, or .xml.'
+      '[react-native-splash-screen-newarch] Android splash image must be .png, .9.png, .jpg, .jpeg, .webp, or .xml.'
     );
   }
 
@@ -516,6 +757,15 @@ function copyAndroidImageResource(projectRoot, resDir, options) {
   fs.copyFileSync(source, destination);
 
   return '@drawable/launch_screen';
+}
+
+function getAndroidDrawableExtension(filePath) {
+  const lowerPath = filePath.toLowerCase();
+  if (lowerPath.endsWith('.9.png')) {
+    return '.9.png';
+  }
+
+  return path.extname(lowerPath);
 }
 
 function withIosSplashScreen(config, options) {
@@ -529,6 +779,9 @@ function withIosSplashScreen(config, options) {
 
   config = withInfoPlist(config, (config) => {
     config.modResults.UILaunchStoryboardName = IOS_LAUNCH_STORYBOARD;
+    if (options.iosMaxWaitTime !== null) {
+      config.modResults[IOS_MAX_WAIT_TIME_PLIST_KEY] = options.iosMaxWaitTime;
+    }
     return config;
   });
 
@@ -634,6 +887,8 @@ function writeIosLaunchScreenFiles(config, options) {
       backgroundColor: options.iosBackgroundColor,
       imageName,
       resizeMode: options.iosResizeMode,
+      imageWidth: options.iosImageWidth,
+      imageHeight: options.iosImageHeight,
     })
   );
 }
@@ -733,23 +988,16 @@ function createIosLaunchStoryboard({
   backgroundColor,
   imageName,
   resizeMode,
+  imageWidth,
+  imageHeight,
 }) {
   const color = hexToRgb(backgroundColor);
-  const imageView = imageName
-    ? [
-        '                          <subviews>',
-        `                              <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="${iosContentMode(resizeMode)}" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="${imageName}" translatesAutoresizingMaskIntoConstraints="NO" id="RNSS-SplashImage" userLabel="SplashScreenImage">`,
-        '                                  <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>',
-        '                              </imageView>',
-        '                          </subviews>',
-        '                          <constraints>',
-        '                              <constraint firstItem="RNSS-SplashImage" firstAttribute="leading" secondItem="RNSS-ContainerView" secondAttribute="leading" id="RNSS-leading"/>',
-        '                              <constraint firstItem="RNSS-SplashImage" firstAttribute="trailing" secondItem="RNSS-ContainerView" secondAttribute="trailing" id="RNSS-trailing"/>',
-        '                              <constraint firstItem="RNSS-SplashImage" firstAttribute="top" secondItem="RNSS-ContainerView" secondAttribute="top" id="RNSS-top"/>',
-        '                              <constraint firstItem="RNSS-SplashImage" firstAttribute="bottom" secondItem="RNSS-ContainerView" secondAttribute="bottom" id="RNSS-bottom"/>',
-        '                          </constraints>',
-      ]
-    : [];
+  const imageView = createIosImageView({
+    imageName,
+    resizeMode,
+    imageWidth,
+    imageHeight,
+  });
   const imageResource = imageName
     ? [`          <image name="${imageName}"/>`]
     : [];
@@ -791,6 +1039,48 @@ function createIosLaunchStoryboard({
   ].join('\n');
 }
 
+function createIosImageView({ imageName, resizeMode, imageWidth, imageHeight }) {
+  if (!imageName) {
+    return [];
+  }
+
+  const fixedSize = imageWidth || imageHeight;
+  const frameWidth = imageWidth || 200;
+  const frameHeight = imageHeight || 200;
+  const constraints = fixedSize
+    ? [
+        '                              <constraint firstItem="RNSS-SplashImage" firstAttribute="centerX" secondItem="RNSS-ContainerView" secondAttribute="centerX" id="RNSS-centerX"/>',
+        '                              <constraint firstItem="RNSS-SplashImage" firstAttribute="centerY" secondItem="RNSS-ContainerView" secondAttribute="centerY" id="RNSS-centerY"/>',
+        ...(imageWidth
+          ? [
+              `                              <constraint firstItem="RNSS-SplashImage" firstAttribute="width" constant="${imageWidth}" id="RNSS-width"/>`,
+            ]
+          : []),
+        ...(imageHeight
+          ? [
+              `                              <constraint firstItem="RNSS-SplashImage" firstAttribute="height" constant="${imageHeight}" id="RNSS-height"/>`,
+            ]
+          : []),
+      ]
+    : [
+        '                              <constraint firstItem="RNSS-SplashImage" firstAttribute="leading" secondItem="RNSS-ContainerView" secondAttribute="leading" id="RNSS-leading"/>',
+        '                              <constraint firstItem="RNSS-SplashImage" firstAttribute="trailing" secondItem="RNSS-ContainerView" secondAttribute="trailing" id="RNSS-trailing"/>',
+        '                              <constraint firstItem="RNSS-SplashImage" firstAttribute="top" secondItem="RNSS-ContainerView" secondAttribute="top" id="RNSS-top"/>',
+        '                              <constraint firstItem="RNSS-SplashImage" firstAttribute="bottom" secondItem="RNSS-ContainerView" secondAttribute="bottom" id="RNSS-bottom"/>',
+      ];
+
+  return [
+    '                          <subviews>',
+    `                              <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="${iosContentMode(resizeMode)}" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="${imageName}" translatesAutoresizingMaskIntoConstraints="NO" id="RNSS-SplashImage" userLabel="SplashScreenImage">`,
+    `                                  <rect key="frame" x="0.0" y="0.0" width="${frameWidth}" height="${frameHeight}"/>`,
+    '                              </imageView>',
+    '                          </subviews>',
+    '                          <constraints>',
+    ...constraints,
+    '                          </constraints>',
+  ];
+}
+
 function iosContentMode(resizeMode) {
   if (resizeMode === 'cover') {
     return 'scaleAspectFill';
@@ -799,6 +1089,12 @@ function iosContentMode(resizeMode) {
 }
 
 function hexToRgb(value) {
+  if (typeof value !== 'string') {
+    throw new Error(
+      '[react-native-splash-screen-newarch] iOS backgroundColor must be a hex color like #000000.'
+    );
+  }
+
   const normalized = value.replace('#', '').trim();
   const hex =
     normalized.length === 3

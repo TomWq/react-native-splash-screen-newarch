@@ -6,7 +6,7 @@ Language: [English](https://github.com/TomWq/react-native-splash-screen-newarch/
 
 A full-screen splash screen package for recent React Native apps. It keeps the familiar `show()` / `hide()` API, supports TurboModule through React Native codegen, keeps a bridge fallback for non-New-Architecture builds, and adds Expo config plugin support.
 
-## Features 
+## Features
 
 - Works with recent React Native projects without forcing `react-native >= 0.84.0`.
 - Supports New Architecture / TurboModule and keeps a bridge compatibility layer.
@@ -115,12 +115,19 @@ Add the config plugin to `app.json` or `app.config.js`, then run `npx expo prebu
             "image": "./assets/splash.png",
             "backgroundColor": "#000000",
             "imageResizeMode": "centerCrop",
+            "imageWidth": null,
+            "imageHeight": null,
+            "imageGravity": "center",
+            "postSplashScreenTheme": null,
             "windowIsTranslucent": false
           },
           "ios": {
             "image": "./assets/splash.png",
             "backgroundColor": "#000000",
-            "resizeMode": "contain"
+            "resizeMode": "contain",
+            "imageWidth": null,
+            "imageHeight": null,
+            "maxWaitTime": 10
           }
         }
       ]
@@ -141,18 +148,25 @@ Plugin options:
 | `android.fullScreen` | `true` | Calls `SplashScreen.show(this, true)` in `MainActivity`. |
 | `android.createLayout` | `true` | Creates `android/app/src/main/res/layout/launch_screen.xml` when missing, plus Android 12+ system splash resources and activity theme. |
 | `android.overwriteLayout` | `false` | Allows the plugin to replace an existing Android launch layout. |
-| `android.image` | `null` | Copies a `.png`, `.jpg`, `.jpeg`, `.webp`, or `.xml` file to `@drawable/launch_screen`. |
+| `android.image` | `null` | Copies a `.png`, `.9.png`, `.jpg`, `.jpeg`, `.webp`, or `.xml` file to `@drawable/launch_screen`. Android `.9.png` files keep the `launch_screen.9.png` filename so NinePatch metadata remains valid. |
 | `android.backgroundColor` | `#000000` | Background color for the generated Android launch layout. |
 | `android.imageResizeMode` | `centerCrop` | Android `ImageView.scaleType` for the generated layout. |
+| `android.imageWidth` | `null` | Optional generated Android image width. Numbers become `dp`; strings are written as-is, such as `120dp` or `wrap_content`. |
+| `android.imageHeight` | `null` | Optional generated Android image height. Numbers become `dp`; strings are written as-is. |
+| `android.imageGravity` | `center` | Android `ImageView.layout_gravity` for the generated layout. |
+| `android.postSplashScreenTheme` | existing activity theme | Theme restored before `super.onCreate()` and used as `postSplashScreenTheme`. The plugin reads the current manifest theme by default; set this option to override it. |
 | `android.systemImage` | `false` | Uses the splash image as the Android 12+ system splash icon. Keep this `false` for full-screen artwork because Android constrains this field to icon size. |
 | `android.windowIsTranslucent` | `false` | Makes the Android system starting window transparent to avoid a solid-color pre-splash frame. Test cold start, recents, and background launch behavior on target devices before enabling. |
 | `ios.image` | `null` | Copies a `.png`, `.jpg`, `.jpeg`, or `.pdf` file to `Images.xcassets/SplashScreenImage.imageset`. |
 | `ios.backgroundColor` | `#000000` | Creates `Images.xcassets/SplashScreenBackground.colorset` and uses it in the launch storyboard. |
 | `ios.resizeMode` | `contain` | Uses `scaleAspectFit` for `contain` and `scaleAspectFill` for `cover`. |
+| `ios.imageWidth` | `null` | Optional generated iOS image width in points. Set this with `ios.imageHeight` for a centered logo instead of a full-screen image. |
+| `ios.imageHeight` | `null` | Optional generated iOS image height in points. |
+| `ios.maxWaitTime` | `10` | Maximum seconds the native iOS `show()` call waits for JavaScript to call `hide()` before removing the overlay. |
 
-On Android, the generated `Theme.App.SplashScreen` handles the earliest Android 12+ system splash phase. Android constrains `windowSplashScreenAnimatedIcon` to icon size, so the plugin defaults that icon to transparent and uses the configured background color for the system phase. Enable `android.windowIsTranslucent` if you prefer to avoid seeing that solid-color system frame. The full-screen `launch_screen.xml` layout is then used by this package after `MainActivity` starts, keeping the splash visible until your JavaScript calls `hide()`.
+On Android, the generated `Theme.App.SplashScreen` handles the earliest Android 12+ system splash phase. Android constrains `windowSplashScreenAnimatedIcon` to icon size, so the plugin defaults that icon to transparent and uses the configured background color for the system phase. Enable `android.windowIsTranslucent` if you prefer to avoid seeing that solid-color system frame. The plugin reads your original activity theme, stores it in manifest metadata, and calls `SplashScreen.applyPostSplashScreenTheme(this)` before `super.onCreate()`, so projects with custom themes do not need to be renamed to `AppTheme`. The full-screen `launch_screen.xml` layout is then used by this package after `MainActivity` starts, keeping the splash visible until your JavaScript calls `hide()`.
 
-On iOS, the plugin sets `UILaunchStoryboardName` to `SplashScreen`, creates `SplashScreen.storyboard`, adds it to the Xcode project resources, and inserts the native `RNSplashScreen.show()` call. If no iOS image is configured, the generated storyboard uses only the configured background color.
+On iOS, the plugin sets `UILaunchStoryboardName` to `SplashScreen`, creates `SplashScreen.storyboard`, adds it to the Xcode project resources, and inserts the native `RNSplashScreen.show()` call. If no iOS image is configured, the generated storyboard uses only the configured background color. By default the image fills the launch view using `ios.resizeMode`; set `ios.imageWidth` and `ios.imageHeight` for a centered fixed-size logo.
 
 ## Android Setup
 

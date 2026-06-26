@@ -10,7 +10,7 @@ export default function TabLayout() {
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      SplashScreen.hide({ animation: 'scaleFade', duration: 2500, scale: 1.5 });
+      SplashScreen.hide({ animation: 'scaleFade', duration: 1000, scale: 1.5 });
     }, 2000);
 
     return () => clearTimeout(timeout);

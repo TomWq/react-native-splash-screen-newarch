@@ -4,7 +4,8 @@ import UIKit
 @objc(RNSplashScreenManager)
 @objcMembers
 public final class RNSplashScreenManager: NSObject {
-    private static let maxWaitTime: TimeInterval = 10
+    private static let defaultMaxWaitTime: TimeInterval = 10
+    private static let maxWaitTimeInfoPlistKey = "RNSplashScreenMaxWaitTime"
     private static let defaultScaleFadeTarget: CGFloat = 1.08
     private static let minScaleFadeTarget: CGFloat = 1
     private static let maxScaleFadeTarget: CGFloat = 1.3
@@ -42,7 +43,7 @@ public final class RNSplashScreenManager: NSObject {
 
         prepareLoadingView()
 
-        let deadline = Date().addingTimeInterval(maxWaitTime)
+        let deadline = Date().addingTimeInterval(maxWaitTime())
         while waiting && Date() < deadline {
             RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
         }
@@ -208,6 +209,22 @@ public final class RNSplashScreenManager: NSObject {
         Bundle.main.object(
             forInfoDictionaryKey: "UILaunchStoryboardName"
         ) as? String ?? defaultLaunchScreenName
+    }
+
+    private class func maxWaitTime() -> TimeInterval {
+        let configuredValue = Bundle.main.object(
+            forInfoDictionaryKey: maxWaitTimeInfoPlistKey
+        )
+
+        if let number = configuredValue as? NSNumber {
+            return max(0, number.doubleValue)
+        }
+
+        if let string = configuredValue as? String, let value = Double(string) {
+            return max(0, value)
+        }
+
+        return defaultMaxWaitTime
     }
 
     private class func createLoadingView(named name: String, in containerView: UIView) -> UIView? {

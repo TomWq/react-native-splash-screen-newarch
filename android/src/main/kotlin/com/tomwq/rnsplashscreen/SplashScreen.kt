@@ -2,6 +2,7 @@ package com.tomwq.rnsplashscreen
 
 import android.app.Activity
 import android.app.Dialog
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Build
@@ -16,19 +17,41 @@ object SplashScreen {
     private const val DEFAULT_SCALE_FADE_TARGET = 1.08f
     private const val MIN_SCALE_FADE_TARGET = 1f
     private const val MAX_SCALE_FADE_TARGET = 1.3f
+    private const val POST_SPLASH_SCREEN_THEME_META_DATA =
+        "com.tomwq.rnsplashscreen.POST_SPLASH_SCREEN_THEME"
     private var splashDialog: Dialog? = null
     private var splashContentView: View? = null
     private var activityRef: WeakReference<Activity>? = null
 
     @JvmStatic
+    fun applyPostSplashScreenTheme(activity: Activity?) {
+        if (activity == null) return
+
+        val themeResId = resolvePostSplashScreenTheme(activity)
+        if (themeResId != 0) {
+            activity.setTheme(themeResId)
+        }
+    }
+
+    @JvmStatic
     fun show(activity: Activity?, themeResId: Int, fullScreen: Boolean) {
         if (activity == null) return
 
-        activityRef = WeakReference(activity)
         activity.runOnUiThread {
-            if (splashDialog?.isShowing == true || !isActivityActive(activity)) {
+            if (!isActivityActive(activity)) {
                 return@runOnUiThread
             }
+
+            if (splashDialog?.isShowing == true) {
+                val previousActivity = activityRef?.get()
+                if (previousActivity === activity && isActivityActive(activity)) {
+                    return@runOnUiThread
+                }
+
+                splashDialog?.let { dismissDialog(it) }
+            }
+
+            activityRef = WeakReference(activity)
 
             try {
                 val contentView = createSplashContentView(activity)
@@ -80,7 +103,7 @@ object SplashScreen {
             val dialog = splashDialog
             if (dialog != null && dialog.isShowing) {
                 if (!isActivityActive(resolvedActivity)) {
-                    clearSplashDialog()
+                    dismissDialog(dialog)
                     return@runOnUiThread
                 }
 
@@ -135,6 +158,28 @@ object SplashScreen {
         return !activity.isFinishing && !isDestroyed
     }
 
+    private fun resolvePostSplashScreenTheme(activity: Activity): Int {
+        val componentName = activity.componentName
+        val activityInfo = try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                activity.packageManager.getActivityInfo(
+                    componentName,
+                    PackageManager.ComponentInfoFlags.of(PackageManager.GET_META_DATA.toLong())
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                activity.packageManager.getActivityInfo(
+                    componentName,
+                    PackageManager.GET_META_DATA
+                )
+            }
+        } catch (_: PackageManager.NameNotFoundException) {
+            null
+        }
+
+        return activityInfo?.metaData?.getInt(POST_SPLASH_SCREEN_THEME_META_DATA, 0) ?: 0
+    }
+
     private fun createSplashContentView(activity: Activity): View {
         val layoutId = activity.resources.getIdentifier(
             "launch_screen",
@@ -182,6 +227,8 @@ object SplashScreen {
     private fun dismissDialog(dialog: Dialog) {
         try {
             dialog.dismiss()
+        } catch (_: RuntimeException) {
+            // The owning Activity may already be gone; clearing references is enough here.
         } finally {
             clearSplashDialog()
         }

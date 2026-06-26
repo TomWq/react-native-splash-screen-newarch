@@ -1,9 +1,25 @@
 {
   "name": "react-native-splash-screen-newarch",
-  "version": "2.0.1",
-  "description": "A splash screen for react-native, hide when application loaded ,it works on iOS and Android.",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "version": "2.0.2",
+  "description": "A full-screen splash screen package for recent React Native apps with New Architecture, bridge fallback, animations, and Expo config plugin support.",
+  "main": "./lib/commonjs/index.js",
+  "module": "./lib/module/index.js",
+  "types": "./lib/typescript/commonjs/src/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./lib/typescript/module/src/index.d.ts",
+        "default": "./lib/module/index.js"
+      },
+      "require": {
+        "types": "./lib/typescript/commonjs/src/index.d.ts",
+        "default": "./lib/commonjs/index.js"
+      }
+    },
+    "./app.plugin": "./app.plugin.js",
+    "./app.plugin.js": "./app.plugin.js",
+    "./package.json": "./package.json"
+  },
   "files": [
     "android/src",
     "android/build.gradle",
@@ -12,9 +28,9 @@
     "ios/RNSplashScreen.mm",
     "ios/RNSplashScreenManager.swift",
     "src",
+    "lib",
     "app.plugin.js",
     "index.js",
-    "index.d.ts",
     "react-native.config.js",
     "react-native-splash-screen-newarch.podspec",
     "README.md",
@@ -30,7 +46,10 @@
     }
   },
   "scripts": {
-    "test": "node --check index.js && node --check app.plugin.js && node scripts/test-plugin.js",
+    "build": "bob build",
+    "clean": "bob clean",
+    "test": "npm run build && node --check index.js && node --check app.plugin.js && node scripts/test-plugin.js",
+    "prepare": "bob build",
     "pack:dry-run": "npm pack --dry-run",
     "npm:login": "npm login --auth-type=web --registry=https://registry.npmjs.org/",
     "publish:dry-run": "npm publish --dry-run",
@@ -65,13 +84,35 @@
     "url": "https://github.com/TomWq/react-native-splash-screen-newarch/issues"
   },
   "peerDependencies": {
-    "react-native": "*",
-    "expo": "*"
+    "expo": "*",
+    "react-native": "*"
   },
   "peerDependenciesMeta": {
     "expo": {
       "optional": true
     }
   },
-  "homepage": "https://github.com/TomWq/react-native-splash-screen-newarch#readme"
+  "homepage": "https://github.com/TomWq/react-native-splash-screen-newarch#readme",
+  "devDependencies": {
+    "react-native-builder-bob": "^0.43.0"
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "commonjs",
+        {
+          "esm": true
+        }
+      ],
+      "typescript"
+    ]
+  }
 }

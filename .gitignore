@@ -28,6 +28,9 @@ coverage
 # nyc test coverage
 .nyc_output
 
+# builder-bob output
+lib/
+
 # Grunt intermediate storage (http://gruntjs.com/creating-plugins#storing-task-files)
 .grunt
 
@@ -51,4 +54,5 @@ jspm_packages
 **/.gradle/
 **/xcuserdata/
 examples/.podhome/
+
 android/.settings/
