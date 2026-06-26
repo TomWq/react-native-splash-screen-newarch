@@ -368,6 +368,10 @@ iOS 侧隐藏动画会作用在 `RNSplashScreen.show()` 添加到 App window 上
 - [Apple Human Interface Guidelines: Launching](https://developer.apple.com/design/human-interface-guidelines/launching)
 - [Apple Info.plist key: UILaunchStoryboardName](https://developer.apple.com/documentation/bundleresources/information-property-list/uilaunchstoryboardname)
 
+## 致谢
+
+感谢 [crazycodeboy/react-native-splash-screen](https://github.com/crazycodeboy/react-native-splash-screen)，本库的经典 API 兼容和升级方向参考了它的设计。
+
 ## License
 
 MIT

@@ -4,11 +4,9 @@
 
 Language: [English](https://github.com/TomWq/react-native-splash-screen-newarch/blob/main/README.md) | [简体中文](https://github.com/TomWq/react-native-splash-screen-newarch/blob/main/README.zh.md)
 
-面向新版 React Native 的全屏启动屏库，基于经典 `react-native-splash-screen` API 升级。
-
 A full-screen splash screen package for recent React Native apps. It keeps the familiar `show()` / `hide()` API, supports TurboModule through React Native codegen, keeps a bridge fallback for non-New-Architecture builds, and adds Expo config plugin support.
 
-## Features
+## Features 
 
 - Works with recent React Native projects without forcing `react-native >= 0.84.0`.
 - Supports New Architecture / TurboModule and keeps a bridge compatibility layer.
@@ -367,6 +365,10 @@ On iOS, animated hide is applied to the launch storyboard overlay window that `R
 
 - [Apple Human Interface Guidelines: Launching](https://developer.apple.com/design/human-interface-guidelines/launching)
 - [Apple Info.plist key: UILaunchStoryboardName](https://developer.apple.com/documentation/bundleresources/information-property-list/uilaunchstoryboardname)
+
+## Acknowledgements
+
+Thanks to [crazycodeboy/react-native-splash-screen](https://github.com/crazycodeboy/react-native-splash-screen), whose classic API and implementation inspired this package.
 
 ## License
 
