@@ -27,6 +27,10 @@ launch screen assets directly. It creates the iOS launch storyboard/assets,
 Android launch layout, Android 12+ splash resources, and patches the native
 startup files. The runtime splash is hidden from `src/app/_layout.tsx`.
 
+Android sets `windowIsTranslucent` in the plugin options so the system starting
+window does not show a solid-color frame before the library's full-screen splash
+takes over.
+
 If you change splash assets on iOS, delete the app from the simulator or device
 and reinstall it because iOS caches launch screens.
 

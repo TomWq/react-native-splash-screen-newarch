@@ -116,7 +116,8 @@ Add the config plugin to `app.json` or `app.config.js`, then run `npx expo prebu
             "createLayout": true,
             "image": "./assets/splash.png",
             "backgroundColor": "#000000",
-            "imageResizeMode": "centerCrop"
+            "imageResizeMode": "centerCrop",
+            "windowIsTranslucent": false
           },
           "ios": {
             "image": "./assets/splash.png",
@@ -225,13 +226,15 @@ If neither a layout nor image resource exists, Android shows a fullscreen black 
 
 ### Android 12+ System Splash Note
 
-Android owns the earliest system splash phase on Android 12 and newer. This package takes over immediately after your `Activity` starts, so it can show a full-screen layout or image during React Native startup. If you want to soften the handoff from the system splash phase, you can test a translucent launch theme:
+Android owns the earliest system splash phase on Android 12 and newer. This package takes over immediately after your `Activity` starts, so it can show a full-screen layout or image during React Native startup. Expo projects can set `android.windowIsTranslucent` in the plugin options to avoid a solid-color system frame before this package takes over.
+
+For manually configured Android projects, you can test the equivalent launch theme item:
 
 ```xml
 <item name="android:windowIsTranslucent">true</item>
 ```
 
-Use this only after testing cold start, back stack behavior, and theme transitions on your target Android versions.
+Use translucency only after testing cold start, back stack behavior, recents, and theme transitions on your target Android versions.
 
 This package does not require AppCompat internally. However, your host app theme must still match your `Activity` base class. If your React Native template uses an AppCompat-backed `ReactActivity`, keep your app theme as an AppCompat descendant, for example `Theme.AppCompat.DayNight.NoActionBar`; otherwise Android can crash with `You need to use a Theme.AppCompat theme (or descendant) with this activity.`
 

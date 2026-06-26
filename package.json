@@ -34,7 +34,7 @@
     "pack:dry-run": "npm pack --dry-run",
     "npm:login": "npm login --auth-type=web --registry=https://registry.npmjs.org/",
     "publish:dry-run": "npm publish --dry-run",
-    "publish:npm": "npm publish --access public",
+    "publish:npm": "npm publish --access public --registry=https://registry.npmjs.org/",
     "release:patch": "npm version patch && npm run publish:npm",
     "release:minor": "npm version minor && npm run publish:npm",
     "release:major": "npm version major && npm run publish:npm"

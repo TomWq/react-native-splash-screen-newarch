@@ -116,7 +116,8 @@ export default function App() {
             "createLayout": true,
             "image": "./assets/splash.png",
             "backgroundColor": "#000000",
-            "imageResizeMode": "centerCrop"
+            "imageResizeMode": "centerCrop",
+            "windowIsTranslucent": false
           },
           "ios": {
             "image": "./assets/splash.png",
@@ -225,13 +226,15 @@ android/app/src/main/res/drawable/launch_screen.png
 
 ### Android 12+ 系统启动屏说明
 
-Android 12 及以上最早的系统启动屏阶段由系统控制。本库会在 `Activity` 创建后接管显示，因此可以在 React Native 启动期间展示全屏 layout 或图片。如果你希望弱化系统启动屏到库内启动屏之间的切换，可以测试透明启动主题：
+Android 12 及以上最早的系统启动屏阶段由系统控制。本库会在 `Activity` 创建后接管显示，因此可以在 React Native 启动期间展示全屏 layout 或图片。Expo 项目可以通过插件选项 `android.windowIsTranslucent` 避免在本库接管前先看到一帧纯色系统页。
+
+手动配置 Android 项目时，可以测试等价的启动 theme 配置：
 
 ```xml
 <item name="android:windowIsTranslucent">true</item>
 ```
 
-这个方案需要在目标 Android 版本上测试冷启动、返回栈和主题切换表现后再使用。
+这个方案需要在目标 Android 版本上测试冷启动、返回栈、最近任务和主题切换表现后再使用。
 
 本库内部不要求 AppCompat。不过宿主 App 的主题仍然必须匹配你的 `Activity` 基类。如果你的 React Native 模板使用的是基于 AppCompat 的 `ReactActivity`，App 主题需要继续继承 AppCompat，例如 `Theme.AppCompat.DayNight.NoActionBar`；否则 Android 会因为 `You need to use a Theme.AppCompat theme (or descendant) with this activity.` 崩溃。
 
