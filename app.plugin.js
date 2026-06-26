@@ -689,15 +689,26 @@ function upsertAndroidSplashStyle(styles, options) {
 
 function createAndroidLaunchScreenLayout(projectRoot, resDir, options) {
   const background = options.backgroundColor;
-  const imageResource = copyAndroidImageResource(projectRoot, resDir, options);
+  const image = copyAndroidImageResource(projectRoot, resDir, options);
 
-  if (!imageResource) {
+  if (!image) {
     return [
       '<?xml version="1.0" encoding="utf-8"?>',
       '<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"',
       '    android:layout_width="match_parent"',
       '    android:layout_height="match_parent"',
       `    android:background="${background}" />`,
+      '',
+    ].join('\n');
+  }
+
+  if (image.isNinePatch) {
+    return [
+      '<?xml version="1.0" encoding="utf-8"?>',
+      '<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"',
+      '    android:layout_width="match_parent"',
+      '    android:layout_height="match_parent"',
+      `    android:background="${image.resource}" />`,
       '',
     ].join('\n');
   }
@@ -717,7 +728,7 @@ function createAndroidLaunchScreenLayout(projectRoot, resDir, options) {
     `        android:layout_height="${imageHeight}"`,
     `        android:layout_gravity="${options.imageGravity}"`,
     `        android:scaleType="${options.imageResizeMode}"`,
-    `        android:src="${imageResource}" />`,
+    `        android:src="${image.resource}" />`,
     '</FrameLayout>',
     '',
   ].join('\n');
@@ -756,7 +767,10 @@ function copyAndroidImageResource(projectRoot, resDir, options) {
   fs.mkdirSync(drawableDir, { recursive: true });
   fs.copyFileSync(source, destination);
 
-  return '@drawable/launch_screen';
+  return {
+    resource: '@drawable/launch_screen',
+    isNinePatch: extension === '.9.png',
+  };
 }
 
 function getAndroidDrawableExtension(filePath) {

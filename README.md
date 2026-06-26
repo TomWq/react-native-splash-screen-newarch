@@ -148,7 +148,7 @@ Plugin options:
 | `android.fullScreen` | `true` | Calls `SplashScreen.show(this, true)` in `MainActivity`. |
 | `android.createLayout` | `true` | Creates `android/app/src/main/res/layout/launch_screen.xml` when missing, plus Android 12+ system splash resources and activity theme. |
 | `android.overwriteLayout` | `false` | Allows the plugin to replace an existing Android launch layout. |
-| `android.image` | `null` | Copies a `.png`, `.9.png`, `.jpg`, `.jpeg`, `.webp`, or `.xml` file to `@drawable/launch_screen`. Android `.9.png` files keep the `launch_screen.9.png` filename so NinePatch metadata remains valid. |
+| `android.image` | `null` | Copies a `.png`, `.9.png`, `.jpg`, `.jpeg`, `.webp`, or `.xml` file to `@drawable/launch_screen`. Android `.9.png` files keep the `launch_screen.9.png` filename and are applied as the generated layout background so NinePatch stretch regions are respected. |
 | `android.backgroundColor` | `#000000` | Background color for the generated Android launch layout. |
 | `android.imageResizeMode` | `centerCrop` | Android `ImageView.scaleType` for the generated layout. |
 | `android.imageWidth` | `null` | Optional generated Android image width. Numbers become `dp`; strings are written as-is, such as `120dp` or `wrap_content`. |
@@ -222,6 +222,15 @@ The library looks for `android/app/src/main/res/layout/launch_screen.xml`. If th
         android:scaleType="centerCrop"
         android:src="@drawable/launch_screen" />
 </FrameLayout>
+```
+
+For Android `.9.png` images, use the drawable as a view background instead of `ImageView android:src` so the NinePatch stretch regions are respected:
+
+```xml
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/launch_screen" />
 ```
 
 ### Android No-XML Fallback

@@ -150,7 +150,7 @@ Plugin 选项：
 | `android.fullScreen` | `true` | 在 `MainActivity` 中调用 `SplashScreen.show(this, true)`。 |
 | `android.createLayout` | `true` | 当 Android 缺少 `android/app/src/main/res/layout/launch_screen.xml` 时自动创建，同时生成 Android 12+ 系统启动屏资源和 Activity theme。 |
 | `android.overwriteLayout` | `false` | 允许插件覆盖已有 Android 启动 layout。 |
-| `android.image` | `null` | 将 `.png`、`.9.png`、`.jpg`、`.jpeg`、`.webp` 或 `.xml` 文件复制为 `@drawable/launch_screen`。Android `.9.png` 会保留 `launch_screen.9.png` 文件名，确保 NinePatch 信息有效。 |
+| `android.image` | `null` | 将 `.png`、`.9.png`、`.jpg`、`.jpeg`、`.webp` 或 `.xml` 文件复制为 `@drawable/launch_screen`。Android `.9.png` 会保留 `launch_screen.9.png` 文件名，并作为自动生成 layout 的背景使用，确保 NinePatch 拉伸区域生效。 |
 | `android.backgroundColor` | `#000000` | 自动生成 Android 启动 layout 时使用的背景色。 |
 | `android.imageResizeMode` | `centerCrop` | 自动生成 layout 中 `ImageView.scaleType` 的取值。 |
 | `android.imageWidth` | `null` | 可选的 Android 启动图宽度。数字会转成 `dp`；字符串会原样写入，例如 `120dp` 或 `wrap_content`。 |
@@ -224,6 +224,15 @@ public class MainActivity extends ReactActivity {
         android:scaleType="centerCrop"
         android:src="@drawable/launch_screen" />
 </FrameLayout>
+```
+
+如果使用 Android `.9.png`，请把 drawable 用作 View 的背景，而不是 `ImageView android:src`，这样 NinePatch 拉伸区域才会生效：
+
+```xml
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/launch_screen" />
 ```
 
 ### Android 无 XML 回退

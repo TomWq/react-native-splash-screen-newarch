@@ -314,8 +314,10 @@ function testAndroidNinePatchImageIsPreserved() {
     exists(root, 'android/app/src/main/res/drawable/launch_screen.9.png')
   );
   check(
-    'android nine patch layout references resource name',
-    layout.includes('android:src="@drawable/launch_screen"')
+    'android nine patch layout uses background resource',
+    layout.includes('android:background="@drawable/launch_screen"') &&
+      !layout.includes('android:src="@drawable/launch_screen"') &&
+      !layout.includes('<ImageView')
   );
 }
 

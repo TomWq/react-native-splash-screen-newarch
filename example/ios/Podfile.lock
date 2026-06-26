@@ -1469,7 +1469,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - react-native-splash-screen-newarch (2.0.0):
+  - react-native-splash-screen-newarch (2.0.2):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -2149,7 +2149,7 @@ SPEC CHECKSUMS:
   React-Mapbuffer: 92b99e450e8ff598b27d6e4db3a75e04fd45e9a9
   React-microtasksnativemodule: 2fe0f2bd2840dedbd66c0ac249c64f977f39cc18
   react-native-safe-area-context: 5727bd761ca52fa393b40989a6483bf859622136
-  react-native-splash-screen-newarch: 950e549bd7e6d961da8a11f098120c293b043d68
+  react-native-splash-screen-newarch: c2511722ddfc6941c10ee199329f1bc192ddbf3a
   React-NativeModulesApple: 44a9474594566cd03659f92e38f42599c6b9dee4
   React-networking: db73d91466cb134fcbdaaa579fb2de14e2c2ea01
   React-oscompat: b924b8609d06899f00ab1aa813b0cde9c5e12771

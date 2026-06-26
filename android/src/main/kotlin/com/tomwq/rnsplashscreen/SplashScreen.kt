@@ -5,6 +5,7 @@ import android.app.Dialog
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.NinePatchDrawable
 import android.os.Build
 import android.view.View
 import android.view.WindowManager
@@ -208,18 +209,25 @@ object SplashScreen {
         val imageId = if (drawableId != 0) drawableId else mipmapId
 
         return FrameLayout(activity).apply {
-            setBackgroundColor(Color.BLACK)
             if (imageId != 0) {
-                addView(
-                    ImageView(activity).apply {
-                        setImageResource(imageId)
-                        scaleType = ImageView.ScaleType.CENTER_CROP
-                    },
-                    FrameLayout.LayoutParams(
-                        FrameLayout.LayoutParams.MATCH_PARENT,
-                        FrameLayout.LayoutParams.MATCH_PARENT
+                val imageDrawable = activity.getDrawable(imageId)
+                if (imageDrawable is NinePatchDrawable) {
+                    background = imageDrawable
+                } else {
+                    setBackgroundColor(Color.BLACK)
+                    addView(
+                        ImageView(activity).apply {
+                            setImageResource(imageId)
+                            scaleType = ImageView.ScaleType.CENTER_CROP
+                        },
+                        FrameLayout.LayoutParams(
+                            FrameLayout.LayoutParams.MATCH_PARENT,
+                            FrameLayout.LayoutParams.MATCH_PARENT
+                        )
                     )
-                )
+                }
+            } else {
+                setBackgroundColor(Color.BLACK)
             }
         }
     }
