@@ -4,6 +4,8 @@
 
 语言：[English](https://github.com/TomWq/react-native-splash-screen-newarch/blob/main/README.md) | [简体中文](https://github.com/TomWq/react-native-splash-screen-newarch/blob/main/README.zh.md)
 
+文档站：[简体中文](https://tomwq.github.io/react-native-splash-screen-newarch/) | [English](https://tomwq.github.io/react-native-splash-screen-newarch/en/)
+
 适用于 React Native 和 Expo prebuild 项目的全屏启动屏库。它会在 React Native 启动期间保持原生启动画面可见，并在首屏准备好后将其移除。
 
 ## 功能特性

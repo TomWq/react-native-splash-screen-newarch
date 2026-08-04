@@ -1,0 +1,578 @@
+:root {
+  --vp-c-brand-1: #117b75;
+  --vp-c-brand-2: #0b6762;
+  --vp-c-brand-3: #074e4a;
+  --vp-c-brand-soft: rgba(17, 123, 117, 0.14);
+  --splash-ink: #14201e;
+  --splash-paper: #f1f5f1;
+  --splash-teal: #16877f;
+  --splash-coral: #f25f45;
+  --splash-yellow: #f6bb43;
+  --splash-line: rgba(20, 32, 30, 0.17);
+}
+
+.VPNavBarTitle .logo {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.splash-home {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  color: var(--splash-ink);
+  background: var(--splash-paper);
+}
+
+.splash-hero {
+  min-height: min(620px, calc(100svh - 132px));
+  display: flex;
+  align-items: center;
+  background-color: #edf2ee;
+  border-bottom: 1px solid var(--splash-line);
+}
+
+.splash-hero__inner {
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 78px 0 82px;
+}
+
+.splash-eyebrow,
+.splash-section__label {
+  margin: 0 0 18px;
+  color: #42615d;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.splash-hero h1 {
+  max-width: 1120px;
+  margin: 0;
+  color: var(--splash-ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 52px;
+  font-weight: 760;
+  line-height: 1.02;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.splash-hero__lead {
+  max-width: 720px;
+  margin: 28px 0 0;
+  color: #39504d;
+  font-size: 19px;
+  line-height: 1.68;
+}
+
+.splash-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.splash-action {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  border: 1px solid rgba(20, 32, 30, 0.28);
+  border-radius: 6px;
+  color: var(--splash-ink);
+  background: rgba(255, 255, 255, 0.68);
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 160ms ease, background-color 160ms ease;
+}
+
+.splash-action:hover {
+  color: var(--splash-ink);
+  background: #fff;
+  transform: translateY(-2px);
+}
+
+.splash-action--primary {
+  color: #fff;
+  border-color: var(--splash-ink);
+  background: var(--splash-ink);
+}
+
+.splash-action--primary:hover {
+  color: #fff;
+  background: #263834;
+}
+
+.splash-text-link {
+  padding: 10px 4px;
+  color: #245d58;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.splash-compat {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-top: 40px;
+  color: #47615e;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.splash-compat span + span::before {
+  content: '/';
+  padding: 0 12px;
+  color: var(--splash-coral);
+}
+
+.splash-section {
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 104px 0;
+}
+
+.splash-section__intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.64fr);
+  gap: 64px;
+  align-items: end;
+}
+
+.splash-section__intro .splash-section__label {
+  grid-column: 1 / -1;
+  margin-bottom: -42px;
+}
+
+.splash-section h2,
+.splash-install h2 {
+  max-width: 760px;
+  margin: 0;
+  color: var(--splash-ink);
+  font-size: 40px;
+  line-height: 1.14;
+  letter-spacing: 0;
+}
+
+.splash-section__intro > p:last-child,
+.splash-install p {
+  margin: 0;
+  color: #536864;
+  font-size: 16px;
+  line-height: 1.72;
+}
+
+.splash-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 64px;
+  border-top: 1px solid var(--splash-line);
+  border-bottom: 1px solid var(--splash-line);
+}
+
+.splash-mode {
+  position: relative;
+  min-height: 330px;
+  padding: 36px 42px 40px 0;
+}
+
+.splash-mode + .splash-mode {
+  padding-left: 42px;
+  border-left: 1px solid var(--splash-line);
+}
+
+.splash-mode__number {
+  position: absolute;
+  top: 36px;
+  right: 36px;
+  color: var(--splash-teal);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 15px;
+}
+
+.splash-mode--dialog .splash-mode__number {
+  color: var(--splash-coral);
+}
+
+.splash-mode__meta {
+  margin: 0 0 56px;
+  color: #61736f;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.splash-mode h3,
+.splash-flow h3 {
+  margin: 0;
+  color: var(--splash-ink);
+  font-size: 25px;
+  letter-spacing: 0;
+}
+
+.splash-mode > p:not(.splash-mode__meta) {
+  max-width: 460px;
+  margin: 18px 0 28px;
+  color: #50625f;
+  line-height: 1.72;
+}
+
+.splash-mode a,
+.splash-install a {
+  color: #126d67;
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.splash-flow {
+  padding-top: 56px;
+}
+
+.splash-flow .splash-section__intro {
+  display: block;
+}
+
+.splash-flow .splash-section__intro .splash-section__label {
+  margin-bottom: 18px;
+}
+
+.splash-flow__steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 62px 0 0;
+  padding: 0;
+  border-top: 3px solid var(--splash-ink);
+  list-style: none;
+}
+
+.splash-flow__steps li {
+  min-height: 220px;
+  padding: 28px 28px 0 0;
+}
+
+.splash-flow__steps li + li {
+  padding-left: 28px;
+  border-left: 1px solid var(--splash-line);
+}
+
+.splash-flow__steps span {
+  display: block;
+  margin-bottom: 44px;
+  color: var(--splash-coral);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 14px;
+}
+
+.splash-flow__steps li:nth-child(2) span {
+  color: var(--splash-teal);
+}
+
+.splash-flow__steps li:nth-child(3) span {
+  color: #b67900;
+}
+
+.splash-flow__steps p {
+  margin: 12px 0 0;
+  color: #536864;
+  line-height: 1.65;
+}
+
+.splash-install {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(400px, 1.2fr);
+  gap: 80px;
+  align-items: center;
+  padding: 82px max(24px, calc((100vw - 1180px) / 2));
+  color: #fff;
+  background: var(--splash-ink);
+}
+
+.splash-install .splash-section__label,
+.splash-install h2 {
+  color: #fff;
+}
+
+.splash-install p {
+  margin-top: 18px;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.splash-install__command {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 22px;
+}
+
+.splash-install code {
+  width: 100%;
+  padding: 22px 24px;
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.17);
+  border-radius: 6px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.splash-install a {
+  color: #8ee3d9;
+}
+
+.dark .splash-home {
+  color: #e9f2ef;
+  background: #101816;
+}
+
+.dark .splash-hero {
+  background-color: #13201d;
+  border-bottom-color: rgba(255, 255, 255, 0.14);
+}
+
+.dark .splash-hero h1 {
+  color: #edf5f2;
+}
+
+.dark .splash-eyebrow,
+.dark .splash-compat {
+  color: #91aaa5;
+}
+
+.dark .splash-hero__lead {
+  color: #b3c5c0;
+}
+
+.dark .splash-action {
+  color: #edf5f2;
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dark .splash-action:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.dark .splash-action--primary {
+  color: #14201e;
+  border-color: #edf5f2;
+  background: #edf5f2;
+}
+
+.dark .splash-action--primary:hover {
+  color: #14201e;
+  background: #fff;
+}
+
+.dark .splash-text-link {
+  color: #8ee3d9;
+}
+
+.dark .splash-section h2,
+.dark .splash-mode h3,
+.dark .splash-flow h3 {
+  color: #edf5f2;
+}
+
+.dark .splash-section__intro > p:last-child,
+.dark .splash-mode > p:not(.splash-mode__meta),
+.dark .splash-flow__steps p {
+  color: #a7bbb6;
+}
+
+.dark .splash-mode-grid,
+.dark .splash-mode + .splash-mode,
+.dark .splash-flow__steps li + li {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+@media (max-width: 900px) {
+  .splash-hero {
+    min-height: min(620px, calc(100svh - 108px));
+    align-items: flex-start;
+  }
+
+  .splash-hero__inner {
+    padding-top: 54px;
+  }
+
+  .splash-hero h1 {
+    max-width: 560px;
+    font-size: 43px;
+  }
+
+  .splash-hero__lead {
+    max-width: 530px;
+    font-size: 17px;
+  }
+
+  .splash-section__intro,
+  .splash-install {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .splash-section__intro .splash-section__label {
+    margin-bottom: -12px;
+  }
+
+  .splash-install {
+    gap: 44px;
+  }
+}
+
+@media (max-width: 640px) {
+  .VPNavBar .container > .title {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .VPNavBar .content {
+    flex: 0 0 auto;
+  }
+
+  .VPNavBarTitle,
+  .VPNavBarTitle .title,
+  .VPNavBarTitle .title > span {
+    min-width: 0;
+  }
+
+  .VPNavBarTitle .title > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .VPNavBarTitle .logo {
+    flex: 0 0 auto;
+  }
+
+  .splash-hero {
+    min-height: auto;
+  }
+
+  .splash-hero__inner,
+  .splash-section {
+    width: min(100% - 32px, 1180px);
+  }
+
+  .splash-hero__inner {
+    padding: 42px 0 52px;
+  }
+
+  .splash-eyebrow {
+    max-width: 310px;
+    margin-bottom: 14px;
+    font-size: 11px;
+  }
+
+  .splash-hero h1 {
+    font-size: 34px;
+    line-height: 1.04;
+  }
+
+  .splash-hero__lead {
+    max-width: 340px;
+    margin-top: 18px;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .splash-actions {
+    max-width: 340px;
+    margin-top: 24px;
+  }
+
+  .splash-action {
+    min-height: 42px;
+    padding: 0 14px;
+    font-size: 14px;
+  }
+
+  .splash-text-link {
+    width: 100%;
+    padding-left: 0;
+  }
+
+  .splash-compat {
+    max-width: 310px;
+    margin-top: 20px;
+    line-height: 1.9;
+  }
+
+  .splash-section {
+    padding: 76px 0;
+  }
+
+  .splash-section h2,
+  .splash-install h2 {
+    font-size: 32px;
+  }
+
+  .splash-mode-grid,
+  .splash-flow__steps {
+    grid-template-columns: 1fr;
+  }
+
+  .splash-mode {
+    min-height: 0;
+    padding: 32px 0 38px;
+  }
+
+  .splash-mode + .splash-mode {
+    padding-left: 0;
+    border-top: 1px solid var(--splash-line);
+    border-left: 0;
+  }
+
+  .splash-mode__number {
+    top: 32px;
+    right: 4px;
+  }
+
+  .splash-mode__meta {
+    margin-bottom: 42px;
+  }
+
+  .splash-flow {
+    padding-top: 20px;
+  }
+
+  .splash-flow__steps li,
+  .splash-flow__steps li + li {
+    min-height: 0;
+    padding: 24px 0 30px;
+    border-left: 0;
+  }
+
+  .splash-flow__steps li + li {
+    border-top: 1px solid var(--splash-line);
+  }
+
+  .splash-flow__steps span {
+    margin-bottom: 26px;
+  }
+
+  .splash-install {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 64px 16px;
+  }
+
+  .splash-install__command,
+  .splash-install code {
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-action {
+    transition: none;
+  }
+}

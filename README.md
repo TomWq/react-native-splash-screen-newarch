@@ -4,6 +4,8 @@
 
 Language: [English](https://github.com/TomWq/react-native-splash-screen-newarch/blob/main/README.md) | [简体中文](https://github.com/TomWq/react-native-splash-screen-newarch/blob/main/README.zh.md)
 
+Documentation: [English](https://tomwq.github.io/react-native-splash-screen-newarch/en/) | [简体中文](https://tomwq.github.io/react-native-splash-screen-newarch/)
+
 A full-screen splash screen for React Native and Expo prebuild projects. It keeps native launch artwork visible while React Native starts, then removes it when your first screen is ready.
 
 ## Highlights

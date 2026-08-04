@@ -1,0 +1,28 @@
+# react-native-splash-screen-newarch
+
+Native splash screen control for React Native 0.76+ and Expo SDK 52+ projects.
+
+## Documentation
+
+- Overview: https://tomwq.github.io/react-native-splash-screen-newarch/
+- Quick start: https://tomwq.github.io/react-native-splash-screen-newarch/guide/getting-started
+- Expo config plugin: https://tomwq.github.io/react-native-splash-screen-newarch/guide/expo
+- Android setup: https://tomwq.github.io/react-native-splash-screen-newarch/guide/android
+- iOS setup: https://tomwq.github.io/react-native-splash-screen-newarch/guide/ios
+- Hide transitions: https://tomwq.github.io/react-native-splash-screen-newarch/guide/animations
+- Startup performance: https://tomwq.github.io/react-native-splash-screen-newarch/guide/performance
+- API reference: https://tomwq.github.io/react-native-splash-screen-newarch/api/
+- Troubleshooting: https://tomwq.github.io/react-native-splash-screen-newarch/troubleshooting
+- English docs: https://tomwq.github.io/react-native-splash-screen-newarch/en/
+
+## Selection rules
+
+- Expo Go is not supported; use prebuild or a development build.
+- Android system mode is the fastest path for a centered logo and solid background.
+- Android dialog mode is required for full-screen artwork, custom hide transitions, or show() after startup.
+- getStartupMetrics() measures native splash retention, not total cold start or time to interactive.
+
+## Source
+
+- GitHub: https://github.com/TomWq/react-native-splash-screen-newarch
+- npm: https://www.npmjs.com/package/react-native-splash-screen-newarch

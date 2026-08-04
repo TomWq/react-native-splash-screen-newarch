@@ -48,6 +48,9 @@
   "scripts": {
     "build": "bob build",
     "clean": "bob clean",
+    "docs:dev": "npm --prefix website run docs:dev --",
+    "docs:build": "npm --prefix website run docs:build",
+    "docs:preview": "npm --prefix website run docs:preview --",
     "test": "npm run build && node --check index.js && node --check app.plugin.js && node scripts/test-js.js && node scripts/test-plugin.js",
     "prepare": "bob build",
     "pack:dry-run": "npm pack --dry-run",
@@ -93,7 +96,7 @@
       "optional": true
     }
   },
-  "homepage": "https://github.com/TomWq/react-native-splash-screen-newarch#readme",
+  "homepage": "https://tomwq.github.io/react-native-splash-screen-newarch/",
   "devDependencies": {
     "react-native-builder-bob": "^0.43.0"
   },
