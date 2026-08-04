@@ -1,6 +1,6 @@
 {
   "name": "react-native-splash-screen-newarch",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "A full-screen splash screen package for recent React Native apps with New Architecture, bridge fallback, animations, and Expo config plugin support.",
   "main": "./lib/commonjs/index.js",
   "module": "./lib/module/index.js",
