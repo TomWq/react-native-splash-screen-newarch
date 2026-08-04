@@ -9,10 +9,12 @@ A full-screen splash screen for React Native and Expo prebuild projects. It keep
 ## Highlights
 
 - Supports TurboModule through React Native codegen and includes a bridge fallback for projects that have not enabled the New Architecture.
-- Provides `none`, `fade`, and configurable `scaleFade` hide transitions.
+- Provides `none`, `fade`, `scaleFade`, `slideUpFade`, and `zoomOutFade` hide transitions with configurable easing.
 - Uses an Android XML layout or a native full-screen fallback.
+- Offers an opt-in Android system mode that avoids inflating the full-screen layout and creating a `Dialog` during startup.
 - Handles Android display cutouts in full-screen mode.
 - Keeps the iOS launch storyboard visible with a native overlay until JavaScript calls `hide()`.
+- Exposes native splash visibility metrics for startup profiling.
 - Includes an Expo config plugin for native setup and launch asset generation.
 
 ## Requirements
@@ -20,10 +22,12 @@ A full-screen splash screen for React Native and Expo prebuild projects. It keep
 | Target | Requirement |
 | --- | --- |
 | Package | `react-native-splash-screen-newarch@2.x` |
-| React Native | No fixed peer version; the example app is the package's current validation target. |
+| React Native | 0.76 or newer. |
 | Android | `minSdkVersion` 24 by default. |
 | iOS | 15.1 or newer. |
-| Expo | Prebuild or development builds only. Expo Go cannot load this native module. |
+| Expo | SDK 52 or newer, using prebuild or development builds. Expo Go cannot load this native module. |
+
+The CI compatibility matrix covers the minimum React Native 0.76 line with both the Legacy and New Architectures, the latest stable React Native with the New Architecture, the CLI example on iOS, and a clean Expo prebuild plus Android build. React Native 0.82 and newer are New Architecture only.
 
 ## Quick Start
 
@@ -58,9 +62,10 @@ import SplashScreen from 'react-native-splash-screen-newarch';
 export default function App() {
   useEffect(() => {
     SplashScreen.hide({
-      animation: 'scaleFade',
-      duration: 500,
-      scale: 1.12,
+      animation: 'zoomOutFade',
+      duration: 250,
+      scale: 0.92,
+      easing: 'easeOut',
     });
   }, []);
 
@@ -99,7 +104,7 @@ npx expo run:android
 npx expo run:ios
 ```
 
-The plugin patches Android `MainActivity`, iOS `AppDelegate`, and the platform launch resources. On Android it also preserves the activity's existing theme and restores it before `super.onCreate()`.
+The plugin patches Android `MainActivity`, iOS `AppDelegate`, and the platform launch resources. In the default Android `dialog` mode it restores the activity theme before `super.onCreate()`. In `system` mode, AndroidX SplashScreen performs the theme transition.
 
 ### Shared options
 
@@ -115,8 +120,9 @@ The plugin patches Android `MainActivity`, iOS `AppDelegate`, and the platform l
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `android.fullScreen` | `true` | Calls `SplashScreen.show(this, true)` in `MainActivity`. |
-| `android.createLayout` | `true` | Creates `launch_screen.xml`, Android 12+ splash resources, and the activity splash theme when they are missing. |
+| `android.mode` | `dialog` | `dialog` supports full-screen artwork and hide animations. `system` keeps only Android's system splash and skips layout inflation and `Dialog` creation. |
+| `android.fullScreen` | `true` | Controls the cutout/full-screen flag passed to the default Android `dialog` mode. |
+| `android.createLayout` | `true` | Manages `launch_screen.xml`, image resources, Android 12+ splash resources, and the activity splash theme. When `false`, the plugin only adds the native `show()` call and leaves app theme/resource handling unchanged. |
 | `android.overwriteLayout` | `false` | Allows the plugin to replace an existing `launch_screen.xml`. |
 | `android.image` | `null` | Platform image. Supports `.png`, `.9.png`, `.jpg`, `.jpeg`, `.webp`, and `.xml`. |
 | `android.backgroundColor` | `#000000` | Background color for the generated layout and system splash phase. |
@@ -125,10 +131,24 @@ The plugin patches Android `MainActivity`, iOS `AppDelegate`, and the platform l
 | `android.imageHeight` | `null` | Optional image height, using the same dimension rules as width. |
 | `android.imageGravity` | `center` | `ImageView.layout_gravity` used by the generated layout. |
 | `android.postSplashScreenTheme` | Current activity theme | Theme restored before `super.onCreate()` and used as `postSplashScreenTheme`. |
-| `android.systemImage` | `false` | Uses the image as the Android 12+ system splash icon. Keep it disabled for full-screen artwork because Android constrains system splash icons. |
+| `android.systemImage` | `false` in `dialog`; `true` in `system` | Uses the image as the Android system splash icon. Android constrains this icon, so it is not suitable for full-screen artwork. |
 | `android.windowIsTranslucent` | `false` | Makes the system starting window transparent to avoid a solid-color frame before the full-screen splash takes over. Test launch and task behavior before enabling it. |
 
 Android 12 and newer always own the earliest system splash phase. By default, the plugin uses the configured background color with a transparent system icon, then switches to the generated full-screen layout when `MainActivity` starts. Set `android.systemImage` only when the asset is suitable for Android's constrained system icon area.
+
+For the fastest Android path, opt into system mode. It keeps the system splash until `hide()` and does not create the package's full-screen `Dialog`:
+
+```json
+{
+  "android": {
+    "mode": "system",
+    "image": "./assets/splash-logo.png",
+    "backgroundColor": "#000000"
+  }
+}
+```
+
+System mode is intended for a centered logo and solid background. Use the default `dialog` mode when you need full-screen artwork, `show()` after startup, or a custom hide animation on Android.
 
 ### iOS plugin options
 
@@ -150,6 +170,8 @@ Use this section for React Native CLI projects that do not use the Expo config p
 ### Add the native startup call
 
 Call `SplashScreen.show(this, true)` before `super.onCreate(savedInstanceState)`. Pass `false` instead of `true` if the splash should not extend into display cutout areas.
+
+To use the Android system fast path in a manually configured project, pass `true` as the third argument: `SplashScreen.show(this, true, true)`. This requires an AndroidX `Theme.SplashScreen` launch theme with `postSplashScreenTheme` configured. The two-argument call below keeps the default full-screen `Dialog` behavior.
 
 Kotlin:
 
@@ -275,40 +297,73 @@ return YES;
 
 The native overlay waits up to 10 seconds for JavaScript by default. To change the limit in a manually configured project, set `RNSplashScreenMaxWaitTime` in `Info.plist` to a non-negative number of seconds.
 
-The system launch screen cannot animate. On iOS, `fade` and `scaleFade` animate the native overlay created from the launch storyboard.
+The system launch screen cannot animate. On iOS, animated transitions run on the native overlay created from the launch storyboard. When Reduce Motion is enabled, the overlay is removed without animation.
 
 ## API
 
 ```ts
-type HideAnimation = 'none' | 'fade' | 'scaleFade';
+type HideAnimation =
+  | 'none'
+  | 'fade'
+  | 'scaleFade'
+  | 'slideUpFade'
+  | 'zoomOutFade';
+
+type HideEasing = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut';
 
 type HideOptions = {
   animation?: HideAnimation;
   duration?: number;
   scale?: number;
+  easing?: HideEasing;
+};
+
+type StartupMetrics = {
+  showTime: number | null;
+  hideRequestedTime: number | null;
+  hiddenTime: number | null;
+  nativeVisibleDuration: number | null;
+  hideDuration: number | null;
 };
 
 SplashScreen.show(): void;
 SplashScreen.hide(options?: HideOptions): void;
+SplashScreen.getStartupMetrics(): Promise<StartupMetrics>;
 ```
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `animation` | `none` | Hide transition. Use `none`, `fade`, or `scaleFade`. |
-| `duration` | `0` for `none`; `400` for animated transitions | Duration in milliseconds. Negative values are normalized to `0`. |
-| `scale` | `1.08` for `scaleFade` | Target scale for `scaleFade`, clamped from `1.0` to `1.3`. |
+| `animation` | `none` | Hide transition: `none`, `fade`, `scaleFade`, `slideUpFade`, or `zoomOutFade`. |
+| `duration` | `0` for `none`; `250` for animated transitions | Duration in milliseconds. Negative values are normalized to `0`. |
+| `scale` | `1.08` for `scaleFade`; `0.92` for `zoomOutFade` | Target scale. `scaleFade` is clamped to `1.0`-`1.3`; `zoomOutFade` is clamped to `0.7`-`1.0`. |
+| `easing` | `easeOut` | Animation timing: `linear`, `easeIn`, `easeOut`, or `easeInOut`. |
 
 Examples:
 
 ```ts
 SplashScreen.hide();
 SplashScreen.hide({ animation: 'fade' });
-SplashScreen.hide({ animation: 'scaleFade', duration: 500, scale: 1.12 });
+SplashScreen.hide({ animation: 'slideUpFade', easing: 'easeInOut' });
+SplashScreen.hide({ animation: 'zoomOutFade', duration: 250, scale: 0.9 });
 ```
 
 `SplashScreen.show()` displays the native splash view again using the platform resources already configured for the app. The normal startup flow uses the native Android/iOS call to show the splash before JavaScript loads, then the JavaScript `hide()` call removes it.
 
-On Android, hide animations run on the splash content view over a transparent dialog window. On iOS, they run on the launch storyboard overlay window.
+On Android, hide animations run on the splash content view over a transparent dialog window. Android system mode exits immediately instead. On iOS, animations run on the launch storyboard overlay window. Both platforms skip animations when the user or system has disabled motion.
+
+### Startup metrics
+
+`getStartupMetrics()` returns monotonic native timestamps in milliseconds and two derived durations:
+
+| Field | Meaning |
+| --- | --- |
+| `showTime` | Native splash retention started. |
+| `hideRequestedTime` | Native code received `hide()`. |
+| `hiddenTime` | The native splash view was actually removed. |
+| `nativeVisibleDuration` | Time from `showTime` to `hiddenTime`. |
+| `hideDuration` | Time from `hideRequestedTime` to `hiddenTime`, including any hide animation. |
+
+A value is `null` until that phase has occurred. These metrics measure this package's native splash retention, not total process startup, React rendering, or time to interactive. Absolute timestamps are based on each platform's monotonic clock and are only meaningful within the current app process.
 
 ## Troubleshooting
 

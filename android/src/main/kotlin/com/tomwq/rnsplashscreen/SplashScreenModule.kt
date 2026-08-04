@@ -2,6 +2,8 @@ package com.tomwq.rnsplashscreen
 
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.module.annotations.ReactModule
 
 @ReactModule(name = SplashScreenModule.NAME)
@@ -16,13 +18,19 @@ class SplashScreenModule(reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
-    override fun hide(animation: String, duration: Double, scale: Double) {
+    override fun hide(animation: String, duration: Double, scale: Double, easing: String) {
         SplashScreen.hide(
             reactApplicationContext.currentActivity,
             animation,
             duration.toLong(),
-            scale.toFloat()
+            scale.toFloat(),
+            easing
         )
+    }
+
+    @ReactMethod
+    override fun getStartupMetrics(promise: Promise) {
+        promise.resolve(Arguments.makeNativeMap(SplashScreen.getStartupMetrics()))
     }
 
     companion object {

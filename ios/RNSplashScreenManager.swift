@@ -9,18 +9,27 @@ public final class RNSplashScreenManager: NSObject {
     private static let defaultScaleFadeTarget: CGFloat = 1.08
     private static let minScaleFadeTarget: CGFloat = 1
     private static let maxScaleFadeTarget: CGFloat = 1.3
+    private static let defaultZoomOutFadeTarget: CGFloat = 0.92
+    private static let minZoomOutFadeTarget: CGFloat = 0.7
+    private static let maxZoomOutFadeTarget: CGFloat = 1
     private static let defaultLaunchScreenName = "LaunchScreen"
-    private static var waiting = true
+    private static var waiting = false
     private static var addedJsLoadErrorObserver = false
     private static var loadingView: UIView?
     private static var loadingWindow: UIWindow?
     private static weak var previousKeyWindow: UIWindow?
-    private static var pendingHideOptions: HideOptions?
+    private static var timeoutWorkItem: DispatchWorkItem?
+    private static var removalWorkItem: DispatchWorkItem?
+    private static var transitionGeneration: UInt = 0
+    private static var showTime: Double?
+    private static var hideRequestedTime: Double?
+    private static var hiddenTime: Double?
 
     private struct HideOptions {
         let animation: String
         let duration: Double
         let scale: CGFloat
+        let easing: String
     }
 
     public class func show() {
@@ -41,23 +50,13 @@ public final class RNSplashScreenManager: NSObject {
             addedJsLoadErrorObserver = true
         }
 
+        cancelTimeout()
+        cancelScheduledRemoval()
+        resetLoadingViewForShow()
+        recordShow()
         prepareLoadingView()
-
-        let deadline = Date().addingTimeInterval(maxWaitTime())
-        while waiting && Date() < deadline {
-            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.1))
-        }
-
-        let timedOut = waiting
-        waiting = false
-        removeJsLoadErrorObserver()
-
-        if timedOut {
-            removeLoadingView(animation: "none", duration: 0, scale: defaultScaleFadeTarget)
-        } else if let pendingHideOptions {
-            self.pendingHideOptions = nil
-            scheduleRemoveLoadingView(with: pendingHideOptions)
-        }
+        waiting = true
+        scheduleTimeout()
     }
 
     public class func showSplash(_ splashScreen: String, inRootView rootView: UIView) {
@@ -72,6 +71,11 @@ public final class RNSplashScreenManager: NSObject {
             loadingView = createLoadingView(named: splashScreen, in: rootView)
         }
 
+        cancelTimeout()
+        cancelScheduledRemoval()
+        resetLoadingViewForShow()
+        recordShow()
+        removeJsLoadErrorObserver()
         waiting = false
 
         if let loadingView, loadingView.superview == nil {
@@ -80,35 +84,61 @@ public final class RNSplashScreenManager: NSObject {
     }
 
     public class func hide() {
-        hide(animation: "none", duration: 0, scale: Double(defaultScaleFadeTarget))
+        hide(
+            animation: "none",
+            duration: 0,
+            scale: Double(defaultScaleFadeTarget),
+            easing: "easeOut"
+        )
     }
 
     public class func hide(animation: String, duration: Double) {
-        hide(animation: animation, duration: duration, scale: Double(defaultScaleFadeTarget))
+        hide(
+            animation: animation,
+            duration: duration,
+            scale: Double(defaultScaleFadeTarget),
+            easing: "easeOut"
+        )
     }
 
     public class func hide(animation: String, duration: Double, scale: Double) {
+        hide(animation: animation, duration: duration, scale: scale, easing: "easeOut")
+    }
+
+    public class func hide(animation: String, duration: Double, scale: Double, easing: String) {
         if !Thread.isMainThread {
             DispatchQueue.main.async {
-                hide(animation: animation, duration: duration, scale: scale)
+                hide(animation: animation, duration: duration, scale: scale, easing: easing)
             }
             return
         }
 
+        cancelTimeout()
         removeJsLoadErrorObserver()
+        recordHideRequested()
 
         let hideOptions = HideOptions(
             animation: animation,
             duration: duration,
-            scale: safeScaleFadeTarget(scale)
+            scale: safeScaleTarget(scale, animation: animation),
+            easing: easing
         )
 
-        if waiting {
-            pendingHideOptions = hideOptions
-            waiting = false
-        } else {
-            scheduleRemoveLoadingView(with: hideOptions)
-        }
+        waiting = false
+        scheduleRemoveLoadingView(with: hideOptions)
+    }
+
+    public class func startupMetrics() -> [String: Any] {
+        let nativeVisibleDuration = durationBetween(showTime, hiddenTime)
+        let hideDuration = durationBetween(hideRequestedTime, hiddenTime)
+
+        return [
+            "showTime": showTime as Any? ?? NSNull(),
+            "hideRequestedTime": hideRequestedTime as Any? ?? NSNull(),
+            "hiddenTime": hiddenTime as Any? ?? NSNull(),
+            "nativeVisibleDuration": nativeVisibleDuration as Any? ?? NSNull(),
+            "hideDuration": hideDuration as Any? ?? NSNull()
+        ]
     }
 
     @objc
@@ -227,6 +257,44 @@ public final class RNSplashScreenManager: NSObject {
         return defaultMaxWaitTime
     }
 
+    private class func scheduleTimeout() {
+        var workItem: DispatchWorkItem?
+        workItem = DispatchWorkItem {
+            guard
+                let workItem,
+                !workItem.isCancelled,
+                timeoutWorkItem === workItem,
+                waiting
+            else {
+                return
+            }
+
+            timeoutWorkItem = nil
+            waiting = false
+            removeJsLoadErrorObserver()
+            let generation = nextTransitionGeneration()
+            removeLoadingView(
+                animation: "none",
+                duration: 0,
+                scale: defaultScaleFadeTarget,
+                easing: "easeOut",
+                generation: generation
+            )
+        }
+
+        guard let workItem else { return }
+        timeoutWorkItem = workItem
+        DispatchQueue.main.asyncAfter(
+            deadline: .now() + maxWaitTime(),
+            execute: workItem
+        )
+    }
+
+    private class func cancelTimeout() {
+        timeoutWorkItem?.cancel()
+        timeoutWorkItem = nil
+    }
+
     private class func createLoadingView(named name: String, in containerView: UIView) -> UIView? {
         let view = createStoryboardView(named: name) ?? createNibView(named: name)
 
@@ -277,54 +345,138 @@ public final class RNSplashScreenManager: NSObject {
         return Bundle.main.loadNibNamed(name, owner: self, options: nil)?.first as? UIView
     }
 
-    private class func safeScaleFadeTarget(_ scale: Double) -> CGFloat {
-        guard scale.isFinite else {
-            return defaultScaleFadeTarget
+    private class func safeScaleTarget(_ scale: Double, animation: String) -> CGFloat {
+        if animation == "zoomOutFade" {
+            guard scale.isFinite else { return defaultZoomOutFadeTarget }
+            return min(max(CGFloat(scale), minZoomOutFadeTarget), maxZoomOutFadeTarget)
         }
 
+        guard scale.isFinite else { return defaultScaleFadeTarget }
         return min(max(CGFloat(scale), minScaleFadeTarget), maxScaleFadeTarget)
     }
 
     private class func scheduleRemoveLoadingView(with options: HideOptions) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        cancelScheduledRemoval()
+        let generation = nextTransitionGeneration()
+
+        var workItem: DispatchWorkItem?
+        workItem = DispatchWorkItem {
+            guard
+                let workItem,
+                !workItem.isCancelled,
+                removalWorkItem === workItem,
+                transitionGeneration == generation
+            else {
+                return
+            }
+
+            removalWorkItem = nil
             removeLoadingView(
                 animation: options.animation,
                 duration: options.duration,
-                scale: options.scale
+                scale: options.scale,
+                easing: options.easing,
+                generation: generation
             )
         }
+
+        guard let workItem else { return }
+        removalWorkItem = workItem
+        DispatchQueue.main.async(execute: workItem)
     }
 
-    private class func removeLoadingView(animation: String, duration: Double, scale: CGFloat) {
+    private class func cancelScheduledRemoval() {
+        removalWorkItem?.cancel()
+        removalWorkItem = nil
+    }
+
+    private class func nextTransitionGeneration() -> UInt {
+        transitionGeneration &+= 1
+        return transitionGeneration
+    }
+
+    private class func resetLoadingViewForShow() {
+        _ = nextTransitionGeneration()
+        loadingView?.layer.removeAllAnimations()
+        loadingView?.alpha = 1
+        loadingView?.transform = .identity
+    }
+
+    private class func removeLoadingView(
+        animation: String,
+        duration: Double,
+        scale: CGFloat,
+        easing: String,
+        generation: UInt
+    ) {
         guard let loadingView else {
-            clearLoadingView()
+            if transitionGeneration == generation {
+                clearLoadingView()
+            }
             return
         }
 
-        if (animation == "fade" || animation == "scaleFade") && duration > 0 {
+        let supportsAnimation = [
+            "fade",
+            "scaleFade",
+            "slideUpFade",
+            "zoomOutFade"
+        ].contains(animation)
+
+        if supportsAnimation && duration > 0 && !UIAccessibility.isReduceMotionEnabled {
             UIView.animate(
                 withDuration: duration / 1000,
                 delay: 0,
-                options: [.curveEaseOut, .beginFromCurrentState],
+                options: [animationOption(for: easing), .beginFromCurrentState],
                 animations: {
                     loadingView.alpha = 0
-                    if animation == "scaleFade" {
+                    if animation == "scaleFade" || animation == "zoomOutFade" {
                         loadingView.transform = CGAffineTransform(
                             scaleX: scale,
                             y: scale
                         )
+                    } else if animation == "slideUpFade" {
+                        let distance = max(24, loadingView.bounds.height * 0.08)
+                        loadingView.transform = CGAffineTransform(
+                            translationX: 0,
+                            y: -distance
+                        )
                     }
                 },
                 completion: { _ in
+                    guard
+                        transitionGeneration == generation,
+                        self.loadingView === loadingView
+                    else {
+                        return
+                    }
+
                     clearLoadingView()
                 }
             )
-        } else {
+        } else if transitionGeneration == generation {
             clearLoadingView()
         }
     }
 
+    private class func animationOption(for easing: String) -> UIView.AnimationOptions {
+        switch easing {
+        case "linear":
+            return .curveLinear
+        case "easeIn":
+            return .curveEaseIn
+        case "easeInOut":
+            return .curveEaseInOut
+        default:
+            return .curveEaseOut
+        }
+    }
+
     private class func clearLoadingView() {
+        _ = nextTransitionGeneration()
+        cancelTimeout()
+        cancelScheduledRemoval()
+        waiting = false
         loadingView?.removeFromSuperview()
         loadingView = nil
         loadingWindow?.isHidden = true
@@ -332,5 +484,31 @@ public final class RNSplashScreenManager: NSObject {
         loadingWindow = nil
         previousKeyWindow?.makeKey()
         previousKeyWindow = nil
+        recordHidden()
+    }
+
+    private class func recordShow() {
+        showTime = monotonicTimeMs()
+        hideRequestedTime = nil
+        hiddenTime = nil
+    }
+
+    private class func recordHideRequested() {
+        guard showTime != nil, hideRequestedTime == nil, hiddenTime == nil else { return }
+        hideRequestedTime = monotonicTimeMs()
+    }
+
+    private class func recordHidden() {
+        guard showTime != nil, hiddenTime == nil else { return }
+        hiddenTime = monotonicTimeMs()
+    }
+
+    private class func durationBetween(_ start: Double?, _ end: Double?) -> Double? {
+        guard let start, let end else { return nil }
+        return max(0, end - start)
+    }
+
+    private class func monotonicTimeMs() -> Double {
+        ProcessInfo.processInfo.systemUptime * 1_000
     }
 }

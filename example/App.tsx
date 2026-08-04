@@ -16,7 +16,12 @@ function App() {
   const isDarkMode = useColorScheme() === 'dark';
 
   useEffect(() => {
-    SplashScreen.hide({ animation: 'scaleFade', duration: 500, scale: 1.5 });
+    SplashScreen.hide({
+      animation: 'scaleFade',
+      duration: 250,
+      scale: 1.5,
+      easing: 'easeOut',
+    });
   }, []);
 
   return (
@@ -44,12 +49,12 @@ function AppContent() {
         <Text style={styles.title}>react-native-splash-screen-newarch</Text>
         <Text style={styles.body}>
           The native splash screen is shown before React Native renders, then
-          hidden from JavaScript with a scaleFade animation.
+          hidden from JavaScript with a zoomOutFade animation.
         </Text>
         <View style={styles.codeBlock}>
           <Text style={styles.code}>
             {
-              "SplashScreen.hide({ animation: 'scaleFade', duration: 500, scale: 1.12 })"
+              "SplashScreen.hide({ animation: 'zoomOutFade', duration: 250, scale: 0.92 })"
             }
           </Text>
         </View>

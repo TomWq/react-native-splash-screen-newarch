@@ -9,10 +9,12 @@
 ## 功能特性
 
 - 通过 React Native codegen 支持 TurboModule，同时为尚未启用新架构的项目提供 Bridge 回退。
-- 提供 `none`、`fade` 和可配置的 `scaleFade` 隐藏过渡。
+- 提供 `none`、`fade`、`scaleFade`、`slideUpFade` 和 `zoomOutFade` 隐藏过渡，并支持配置 easing。
 - Android 支持 XML layout，也可以自动回退到原生全屏视图。
+- Android 可选 system 快速模式，启动时不 inflate 全屏 layout，也不创建 `Dialog`。
 - Android 全屏模式支持刘海屏区域处理。
 - iOS 使用原生覆盖层保持 Launch Screen storyboard 可见，直到 JavaScript 调用 `hide()`。
+- 提供原生启动屏可见时长指标，便于分析启动性能。
 - 内置 Expo config plugin，可自动完成原生接入和启动资源生成。
 
 ## 环境要求
@@ -20,10 +22,12 @@
 | 目标 | 要求 |
 | --- | --- |
 | 包版本 | `react-native-splash-screen-newarch@2.x` |
-| React Native | 不限制固定的 peer 版本；示例工程是本包当前的验证目标。 |
+| React Native | 0.76 及以上。 |
 | Android | 默认 `minSdkVersion` 24。 |
 | iOS | 15.1 及以上。 |
-| Expo | 仅支持 prebuild 或 development build。Expo Go 无法加载这个原生模块。 |
+| Expo | SDK 52 及以上，仅支持 prebuild 或 development build。Expo Go 无法加载这个原生模块。 |
+
+CI 兼容矩阵会验证最低 React Native 0.76 的旧架构和新架构、最新稳定版 React Native 的新架构、CLI 示例的 iOS 构建，以及 Expo clean prebuild 后的 Android 构建。React Native 0.82 及以上仅提供新架构。
 
 ## 快速开始
 
@@ -58,9 +62,10 @@ import SplashScreen from 'react-native-splash-screen-newarch';
 export default function App() {
   useEffect(() => {
     SplashScreen.hide({
-      animation: 'scaleFade',
-      duration: 500,
-      scale: 1.12,
+      animation: 'zoomOutFade',
+      duration: 250,
+      scale: 0.92,
+      easing: 'easeOut',
     });
   }, []);
 
@@ -99,7 +104,7 @@ npx expo run:android
 npx expo run:ios
 ```
 
-插件会修改 Android `MainActivity`、iOS `AppDelegate` 和双端启动资源。Android 侧还会保留 Activity 原有的 theme，并在 `super.onCreate()` 前恢复它。
+插件会修改 Android `MainActivity`、iOS `AppDelegate` 和双端启动资源。默认的 Android `dialog` 模式会在 `super.onCreate()` 前恢复 Activity theme；`system` 模式则由 AndroidX SplashScreen 完成主题切换。
 
 ### 共用选项
 
@@ -115,8 +120,9 @@ npx expo run:ios
 
 | 选项 | 默认值 | 说明 |
 | --- | --- | --- |
-| `android.fullScreen` | `true` | 在 `MainActivity` 中调用 `SplashScreen.show(this, true)`。 |
-| `android.createLayout` | `true` | 缺少对应文件时，创建 `launch_screen.xml`、Android 12+ 启动资源和 Activity 启动 theme。 |
+| `android.mode` | `dialog` | `dialog` 支持全屏图片和隐藏动画；`system` 只保留 Android 系统启动屏，并跳过 layout inflate 和 `Dialog` 创建。 |
+| `android.fullScreen` | `true` | 控制默认 Android `dialog` 模式使用的刘海屏/全屏参数。 |
+| `android.createLayout` | `true` | 管理 `launch_screen.xml`、图片资源、Android 12+ 启动资源和 Activity 启动 theme。设为 `false` 时，插件只添加原生 `show()` 调用，不改动 App 自己的 theme 和资源处理。 |
 | `android.overwriteLayout` | `false` | 允许插件替换已有的 `launch_screen.xml`。 |
 | `android.image` | `null` | Android 专属图片，支持 `.png`、`.9.png`、`.jpg`、`.jpeg`、`.webp` 和 `.xml`。 |
 | `android.backgroundColor` | `#000000` | 自动生成 layout 和系统启动阶段使用的背景色。 |
@@ -125,10 +131,24 @@ npx expo run:ios
 | `android.imageHeight` | `null` | 可选图片高度，尺寸规则与宽度相同。 |
 | `android.imageGravity` | `center` | 自动生成 layout 使用的 `ImageView.layout_gravity`。 |
 | `android.postSplashScreenTheme` | 当前 Activity theme | 在 `super.onCreate()` 前恢复的主题，同时用于 `postSplashScreenTheme`。 |
-| `android.systemImage` | `false` | 是否把图片用作 Android 12+ 系统启动 icon。全屏图应保持关闭，因为 Android 会限制系统启动 icon 的尺寸。 |
+| `android.systemImage` | `dialog` 模式为 `false`；`system` 模式为 `true` | 是否把图片用作 Android 系统启动 icon。Android 会限制 icon 尺寸，因此不适合全屏图片。 |
 | `android.windowIsTranslucent` | `false` | 让系统 starting window 透明，避免全屏启动图接管前出现纯色画面。开启前需要验证启动和任务栈表现。 |
 
 Android 12 及以上最早的启动阶段始终由系统控制。插件默认使用配置的背景色和透明系统 icon，等 `MainActivity` 启动后再切换到自动生成的全屏 layout。只有当图片适合 Android 受限的系统 icon 区域时，才建议开启 `android.systemImage`。
+
+如果优先追求 Android 启动速度，可以启用 system 模式。它会一直保留系统启动屏直到 `hide()`，不会创建本库的全屏 `Dialog`：
+
+```json
+{
+  "android": {
+    "mode": "system",
+    "image": "./assets/splash-logo.png",
+    "backgroundColor": "#000000"
+  }
+}
+```
+
+system 模式适合“居中 Logo + 纯色背景”。如果需要全屏启动图、启动后再次调用 `show()`，或者在 Android 上使用自定义隐藏动画，请继续使用默认的 `dialog` 模式。
 
 ### iOS 插件选项
 
@@ -150,6 +170,8 @@ Android 12 及以上最早的启动阶段始终由系统控制。插件默认使
 ### 添加原生启动调用
 
 在 `super.onCreate(savedInstanceState)` 之前调用 `SplashScreen.show(this, true)`。如果启动屏不需要延伸到刘海屏区域，可以把 `true` 改为 `false`。
+
+手动配置的项目如需使用 Android system 快速路径，可把第三个参数设为 `true`：`SplashScreen.show(this, true, true)`。该模式要求 launch theme 继承 AndroidX `Theme.SplashScreen` 并配置 `postSplashScreenTheme`。下面的两参数调用仍使用默认的全屏 `Dialog`。
 
 Kotlin：
 
@@ -275,40 +297,73 @@ return YES;
 
 原生覆盖层默认最多等待 JavaScript 10 秒。手动配置项目可以在 `Info.plist` 中把 `RNSplashScreenMaxWaitTime` 设为非负秒数，以修改该限制。
 
-系统 Launch Screen 本身不能执行动画。iOS 上的 `fade` 和 `scaleFade` 作用于根据启动 storyboard 创建的原生覆盖层。
+系统 Launch Screen 本身不能执行动画。iOS 的动画作用于根据启动 storyboard 创建的原生覆盖层；开启“减弱动态效果”后会直接移除覆盖层，不再播放动画。
 
 ## API
 
 ```ts
-type HideAnimation = 'none' | 'fade' | 'scaleFade';
+type HideAnimation =
+  | 'none'
+  | 'fade'
+  | 'scaleFade'
+  | 'slideUpFade'
+  | 'zoomOutFade';
+
+type HideEasing = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut';
 
 type HideOptions = {
   animation?: HideAnimation;
   duration?: number;
   scale?: number;
+  easing?: HideEasing;
+};
+
+type StartupMetrics = {
+  showTime: number | null;
+  hideRequestedTime: number | null;
+  hiddenTime: number | null;
+  nativeVisibleDuration: number | null;
+  hideDuration: number | null;
 };
 
 SplashScreen.show(): void;
 SplashScreen.hide(options?: HideOptions): void;
+SplashScreen.getStartupMetrics(): Promise<StartupMetrics>;
 ```
 
 | 选项 | 默认值 | 说明 |
 | --- | --- | --- |
-| `animation` | `none` | 隐藏过渡，可选 `none`、`fade` 或 `scaleFade`。 |
-| `duration` | `none` 为 `0`；动画过渡为 `400` | 过渡时长，单位为毫秒。负数会被规范化为 `0`。 |
-| `scale` | `scaleFade` 为 `1.08` | `scaleFade` 的目标缩放值，取值会被限制在 `1.0` 到 `1.3`。 |
+| `animation` | `none` | 隐藏过渡，可选 `none`、`fade`、`scaleFade`、`slideUpFade` 或 `zoomOutFade`。 |
+| `duration` | `none` 为 `0`；动画过渡为 `250` | 过渡时长，单位为毫秒。负数会被规范化为 `0`。 |
+| `scale` | `scaleFade` 为 `1.08`；`zoomOutFade` 为 `0.92` | 目标缩放值。`scaleFade` 限制在 `1.0`-`1.3`，`zoomOutFade` 限制在 `0.7`-`1.0`。 |
+| `easing` | `easeOut` | 动画节奏，可选 `linear`、`easeIn`、`easeOut` 或 `easeInOut`。 |
 
 示例：
 
 ```ts
 SplashScreen.hide();
 SplashScreen.hide({ animation: 'fade' });
-SplashScreen.hide({ animation: 'scaleFade', duration: 500, scale: 1.12 });
+SplashScreen.hide({ animation: 'slideUpFade', easing: 'easeInOut' });
+SplashScreen.hide({ animation: 'zoomOutFade', duration: 250, scale: 0.9 });
 ```
 
 `SplashScreen.show()` 会使用 App 已配置的平台资源再次显示原生启动视图。正常启动流程是在 JavaScript 加载前通过 Android/iOS 原生代码显示启动屏，再由 JavaScript 的 `hide()` 将其移除。
 
-Android 的隐藏动画作用于透明 Dialog window 上的启动内容 View；iOS 的隐藏动画作用于 Launch Screen storyboard 覆盖层。
+Android 的隐藏动画作用于透明 Dialog window 上的启动内容 View，system 模式则直接退出。iOS 的隐藏动画作用于 Launch Screen storyboard 覆盖层。系统关闭动画或用户启用“减弱动态效果”时，双端都会跳过动画。
+
+### 启动性能指标
+
+`getStartupMetrics()` 返回基于原生单调时钟的毫秒时间戳，以及两个派生时长：
+
+| 字段 | 含义 |
+| --- | --- |
+| `showTime` | 开始保留原生启动屏。 |
+| `hideRequestedTime` | 原生代码收到 `hide()`。 |
+| `hiddenTime` | 原生启动屏实际移除。 |
+| `nativeVisibleDuration` | 从 `showTime` 到 `hiddenTime` 的时长。 |
+| `hideDuration` | 从 `hideRequestedTime` 到 `hiddenTime` 的时长，包含隐藏动画。 |
+
+对应阶段尚未发生时，字段值为 `null`。这些指标只衡量本库保留原生启动屏的阶段，不等同于完整进程启动、React 渲染或可交互时间。绝对时间戳来自平台单调时钟，只适合在当前 App 进程内比较。
 
 ## 常见问题
 

@@ -129,7 +129,10 @@ function testDefaultExpoKotlinProject() {
     'android import once',
     count(main, 'import com.tomwq.rnsplashscreen.SplashScreen') === 1
   );
-  check('android show once', count(main, 'SplashScreen.show(this, true)') === 1);
+  check(
+    'android show once',
+    count(main, 'SplashScreen.show(this, true, false)') === 1
+  );
   check(
     'android apply post theme once',
     count(main, 'SplashScreen.applyPostSplashScreenTheme(this)') === 1
@@ -239,7 +242,10 @@ function testJavaMainActivityWithExplicitThemeAndImageSizing() {
     'java android import once',
     count(main, 'import com.tomwq.rnsplashscreen.SplashScreen;') === 1
   );
-  check('java android show false', main.includes('SplashScreen.show(this, false);'));
+  check(
+    'java android show false',
+    main.includes('SplashScreen.show(this, false, false);')
+  );
   check(
     'java android apply post theme',
     main.includes('SplashScreen.applyPostSplashScreenTheme(this);')
@@ -293,6 +299,74 @@ function testExistingAndroidLayoutIsNotOverwritten() {
     read(root, 'android/app/src/main/res/layout/launch_screen.xml') ===
       '<FrameLayout android:id="@+id/existing" />\n'
   );
+  check(
+    'existing layout still copies system splash image',
+    exists(root, 'android/app/src/main/res/drawable/launch_screen.png')
+  );
+}
+
+function testExistingAndroidLayoutSupportsSystemImage() {
+  const root = createTempProject({
+    assetName: 'splash.png',
+    existingLayout: '<FrameLayout android:id="@+id/existing" />\n',
+  });
+
+  runPlugin({
+    _projectName: 'example',
+    _projectRoot: root,
+    _mainActivity: { language: 'kt', contents: kotlinMainActivity },
+    _appDelegate: { language: 'swift', contents: swiftAppDelegate },
+  }, {
+    android: { image: './assets/splash.png', systemImage: true },
+    ios: false,
+  });
+
+  check(
+    'existing layout system image has copied drawable',
+    exists(root, 'android/app/src/main/res/drawable/launch_screen.png') &&
+      read(
+        root,
+        'android/app/src/main/res/drawable/launch_screen_system.xml'
+      ).includes('@drawable/launch_screen')
+  );
+}
+
+function testAndroidImageExtensionChangesRemoveOldResources() {
+  const root = createTempProject({ assetName: 'splash.png' });
+  let config = {
+    _projectName: 'example',
+    _projectRoot: root,
+    _mainActivity: { language: 'kt', contents: kotlinMainActivity },
+    _appDelegate: { language: 'swift', contents: swiftAppDelegate },
+  };
+
+  config = runPlugin(config, {
+    android: { image: './assets/splash.png', overwriteLayout: true },
+    ios: false,
+  });
+  fs.writeFileSync(path.join(root, 'assets/splash.jpg'), 'fakeasset');
+  config = runPlugin(config, {
+    android: { image: './assets/splash.jpg', overwriteLayout: true },
+    ios: false,
+  });
+
+  check(
+    'png to jpg removes previous drawable',
+    !exists(root, 'android/app/src/main/res/drawable/launch_screen.png') &&
+      exists(root, 'android/app/src/main/res/drawable/launch_screen.jpg')
+  );
+
+  fs.writeFileSync(path.join(root, 'assets/splash.9.png'), 'fakeasset');
+  runPlugin(config, {
+    android: { image: './assets/splash.9.png', overwriteLayout: true },
+    ios: false,
+  });
+
+  check(
+    'jpg to nine patch removes previous drawable',
+    !exists(root, 'android/app/src/main/res/drawable/launch_screen.jpg') &&
+      exists(root, 'android/app/src/main/res/drawable/launch_screen.9.png')
+  );
 }
 
 function testAndroidNinePatchImageIsPreserved() {
@@ -323,25 +397,77 @@ function testAndroidNinePatchImageIsPreserved() {
 
 function testAndroidCreateLayoutFalseOnlyPatchesMainActivity() {
   const root = createTempProject({ assetName: 'splash.png' });
+  const mainActivityWithThemeReset = kotlinMainActivity.replace(
+    'super.onCreate(savedInstanceState)',
+    [
+      'setTheme(R.style.AppTheme)',
+      '    SplashScreen.show(this, true)',
+      '    SplashScreen.applyPostSplashScreenTheme(this)',
+      '    super.onCreate(savedInstanceState)',
+    ].join('\n')
+  );
+  const config = runPlugin({
+    _projectName: 'example',
+    _projectRoot: root,
+    _mainActivity: { language: 'kt', contents: mainActivityWithThemeReset },
+    _appDelegate: { language: 'swift', contents: swiftAppDelegate },
+  }, {
+    android: { createLayout: false, fullScreen: false },
+    ios: false,
+  });
+
+  check(
+    'createLayout false patches main activity',
+    config._mainActivity.contents.includes(
+      'SplashScreen.show(this, false, false)'
+    ) &&
+      !config._mainActivity.contents.includes(
+        'SplashScreen.show(this, true, false)'
+      )
+  );
+  check('createLayout false skips manifest patch', !config._androidManifest);
+  check(
+    'createLayout false preserves app theme handling',
+    config._mainActivity.contents.includes('setTheme(R.style.AppTheme)') &&
+      !config._mainActivity.contents.includes(
+        'SplashScreen.applyPostSplashScreenTheme(this)'
+      )
+  );
+  check(
+    'createLayout false skips generated resources',
+    !exists(root, 'android/app/src/main/res/layout/launch_screen.xml') &&
+      !exists(root, 'android/app/src/main/res/drawable/launch_screen_system.xml')
+  );
+}
+
+function testAndroidSystemModeUsesFastPath() {
+  const root = createTempProject({ assetName: 'splash.png' });
   const config = runPlugin({
     _projectName: 'example',
     _projectRoot: root,
     _mainActivity: { language: 'kt', contents: kotlinMainActivity },
     _appDelegate: { language: 'swift', contents: swiftAppDelegate },
   }, {
-    android: { createLayout: false },
+    android: { mode: 'system', image: './assets/splash.png' },
     ios: false,
   });
 
+  const main = config._mainActivity.contents;
   check(
-    'createLayout false patches main activity',
-    config._mainActivity.contents.includes('SplashScreen.show(this, true)')
+    'android system mode selects fast path',
+    main.includes('SplashScreen.show(this, true, true)')
   );
-  check('createLayout false skips manifest patch', !config._androidManifest);
   check(
-    'createLayout false skips generated resources',
-    !exists(root, 'android/app/src/main/res/layout/launch_screen.xml') &&
-      !exists(root, 'android/app/src/main/res/drawable/launch_screen_system.xml')
+    'android system mode lets AndroidX apply the post splash theme',
+    !main.includes('SplashScreen.applyPostSplashScreenTheme(this)') &&
+      !main.includes('setTheme(R.style.AppTheme)')
+  );
+  check(
+    'android system mode uses the configured image as the system icon',
+    read(
+      root,
+      'android/app/src/main/res/drawable/launch_screen_system.xml'
+    ).includes('@drawable/launch_screen')
   );
 }
 
@@ -382,6 +508,21 @@ function testIosSizingAndMaxWaitTimeOptions() {
 
 function testInvalidInputs() {
   const root = createTempProject({ assetName: 'splash.gif' });
+
+  assertThrows(
+    'invalid android mode',
+    () =>
+      runPlugin({
+        _projectName: 'example',
+        _projectRoot: root,
+        _mainActivity: { language: 'kt', contents: kotlinMainActivity },
+        _appDelegate: { language: 'swift', contents: swiftAppDelegate },
+      }, {
+        android: { mode: 'fastest' },
+        ios: false,
+      }),
+    'dialog'
+  );
 
   assertThrows(
     'invalid android image extension',
@@ -638,8 +779,11 @@ const objcAppDelegate = `#import "AppDelegate.h"
 testDefaultExpoKotlinProject();
 testJavaMainActivityWithExplicitThemeAndImageSizing();
 testExistingAndroidLayoutIsNotOverwritten();
+testExistingAndroidLayoutSupportsSystemImage();
+testAndroidImageExtensionChangesRemoveOldResources();
 testAndroidNinePatchImageIsPreserved();
 testAndroidCreateLayoutFalseOnlyPatchesMainActivity();
+testAndroidSystemModeUsesFastPath();
 testIosSizingAndMaxWaitTimeOptions();
 testInvalidInputs();
 

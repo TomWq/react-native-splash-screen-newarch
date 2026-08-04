@@ -4,6 +4,7 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReactModuleWithSpec;
+import com.facebook.react.bridge.Promise;
 import com.facebook.react.turbomodule.core.interfaces.TurboModule;
 
 public abstract class NativeSplashScreenSpec extends ReactContextBaseJavaModule
@@ -16,5 +17,8 @@ public abstract class NativeSplashScreenSpec extends ReactContextBaseJavaModule
   public abstract void show();
 
   @ReactMethod
-  public abstract void hide(String animation, double duration, double scale);
+  public abstract void hide(String animation, double duration, double scale, String easing);
+
+  @ReactMethod
+  public abstract void getStartupMetrics(Promise promise);
 }

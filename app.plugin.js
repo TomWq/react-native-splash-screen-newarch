@@ -73,11 +73,13 @@ function normalizeOptions(props) {
     props.android && typeof props.android === 'object' ? props.android : {};
   const iosOptions =
     props.ios && typeof props.ios === 'object' ? props.ios : {};
+  const androidMode = readAndroidMode(androidOptions.mode, props.androidMode);
 
   return {
     android: props.android !== false,
     ios: props.ios !== false,
     fullScreen: readBoolean(androidOptions.fullScreen, props.fullScreen, true),
+    androidMode,
     createAndroidLayout: readBoolean(
       androidOptions.createLayout,
       props.createAndroidLayout,
@@ -112,7 +114,7 @@ function normalizeOptions(props) {
     androidSystemImage: readBoolean(
       androidOptions.systemImage,
       props.androidSystemImage,
-      false
+      androidMode === 'system'
     ),
     androidWindowIsTranslucent: readBoolean(
       androidOptions.windowIsTranslucent,
@@ -139,6 +141,20 @@ function normalizeOptions(props) {
       null
     ),
   };
+}
+
+function readAndroidMode(...values) {
+  const mode = values.find((value) => value !== undefined && value !== null);
+  if (mode === undefined || mode === 'dialog') {
+    return 'dialog';
+  }
+  if (mode === 'system') {
+    return 'system';
+  }
+
+  throw new Error(
+    '[react-native-splash-screen-newarch] android.mode must be "dialog" or "system".'
+  );
 }
 
 function readBoolean(...values) {
@@ -214,12 +230,16 @@ function withAndroidSplashScreen(config, options) {
     if (language === 'kt' || contents.includes(': ReactActivity()')) {
       config.modResults.contents = patchKotlinMainActivity(
         contents,
-        options.fullScreen
+        options.fullScreen,
+        options.createAndroidLayout,
+        options.androidMode
       );
     } else if (language === 'java' || contents.includes('extends ReactActivity')) {
       config.modResults.contents = patchJavaMainActivity(
         contents,
-        options.fullScreen
+        options.fullScreen,
+        options.createAndroidLayout,
+        options.androidMode
       );
     } else {
       throw new Error(
@@ -231,16 +251,30 @@ function withAndroidSplashScreen(config, options) {
   });
 }
 
-function patchKotlinMainActivity(contents, fullScreen) {
+function patchKotlinMainActivity(
+  contents,
+  fullScreen,
+  manageSplashTheme,
+  androidMode
+) {
   let next = addImport(removeExpoAndroidSplashScreen(contents), ANDROID_IMPORT);
-  next = removeAndroidAppThemeReset(next);
+  if (manageSplashTheme) {
+    next = removeAndroidAppThemeReset(next);
+  } else {
+    next = removeAndroidPostSplashScreenThemeCall(next);
+  }
 
-  const call = `SplashScreen.show(this, ${fullScreen ? 'true' : 'false'})`;
+  const useSystemSplash = androidMode === 'system';
+  const call = `SplashScreen.show(this, ${fullScreen ? 'true' : 'false'}, ${useSystemSplash ? 'true' : 'false'})`;
+  const existingCall =
+    /SplashScreen\.show\(this,\s*(?:true|false)(?:,\s*(?:true|false))?\);?/;
   const themeCall = 'SplashScreen.applyPostSplashScreenTheme(this)';
   const beforeSuperOnCreate =
     /(override\s+fun\s+onCreate\s*\([^)]*\)\s*\{[\s\S]*?)(\n[ \t]*)super\.onCreate\s*\(/m;
 
-  if (!next.includes('SplashScreen.show(this')) {
+  if (existingCall.test(next)) {
+    next = next.replace(existingCall, call);
+  } else {
     if (beforeSuperOnCreate.test(next)) {
       next = next.replace(
         beforeSuperOnCreate,
@@ -267,28 +301,42 @@ function patchKotlinMainActivity(contents, fullScreen) {
     }
   }
 
+  if (!manageSplashTheme || useSystemSplash) {
+    return next;
+  }
+
   return normalizeAndroidSplashPatch(
-    replaceOrThrow(
-      next,
-      beforeSuperOnCreate,
-      `$1$2${themeCall}$2super.onCreate(`
-    )
+    replaceOrThrow(next, beforeSuperOnCreate, `$1$2${themeCall}$2super.onCreate(`)
   );
 }
 
-function patchJavaMainActivity(contents, fullScreen) {
+function patchJavaMainActivity(
+  contents,
+  fullScreen,
+  manageSplashTheme,
+  androidMode
+) {
   let next = addImport(
     removeExpoAndroidSplashScreen(contents),
     `${ANDROID_IMPORT};`
   );
-  next = removeAndroidAppThemeReset(next);
+  if (manageSplashTheme) {
+    next = removeAndroidAppThemeReset(next);
+  } else {
+    next = removeAndroidPostSplashScreenThemeCall(next);
+  }
 
-  const call = `SplashScreen.show(this, ${fullScreen ? 'true' : 'false'});`;
+  const useSystemSplash = androidMode === 'system';
+  const call = `SplashScreen.show(this, ${fullScreen ? 'true' : 'false'}, ${useSystemSplash ? 'true' : 'false'});`;
+  const existingCall =
+    /SplashScreen\.show\(this,\s*(?:true|false)(?:,\s*(?:true|false))?\);?/;
   const themeCall = 'SplashScreen.applyPostSplashScreenTheme(this);';
   const beforeSuperOnCreate =
     /((?:protected|public)\s+void\s+onCreate\s*\([^)]*\)\s*\{[\s\S]*?)(\n[ \t]*)super\.onCreate\s*\(/m;
 
-  if (!next.includes('SplashScreen.show(this')) {
+  if (existingCall.test(next)) {
+    next = next.replace(existingCall, call);
+  } else {
     if (beforeSuperOnCreate.test(next)) {
       next = next.replace(
         beforeSuperOnCreate,
@@ -316,18 +364,23 @@ function patchJavaMainActivity(contents, fullScreen) {
     }
   }
 
+  if (!manageSplashTheme || useSystemSplash) {
+    return next;
+  }
+
   return normalizeAndroidSplashPatch(
-    replaceOrThrow(
-      next,
-      beforeSuperOnCreate,
-      `$1$2${themeCall}$2super.onCreate(`
-    )
+    replaceOrThrow(next, beforeSuperOnCreate, `$1$2${themeCall}$2super.onCreate(`)
   );
 }
 
 function removeAndroidAppThemeReset(contents) {
+  return removeAndroidPostSplashScreenThemeCall(
+    contents.replace(/\n[ \t]*setTheme\(R\.style\.AppTheme\);?[ \t]*\n/g, '\n')
+  );
+}
+
+function removeAndroidPostSplashScreenThemeCall(contents) {
   return contents
-    .replace(/\n[ \t]*setTheme\(R\.style\.AppTheme\);?[ \t]*\n/g, '\n')
     .replace(
       /\n[ \t]*SplashScreen\.applyPostSplashScreenTheme\(this\);?[ \t]*\n/g,
       '\n'
@@ -338,7 +391,7 @@ function removeAndroidAppThemeReset(contents) {
 function normalizeAndroidSplashPatch(contents) {
   return contents
     .replace(
-      /(SplashScreen\.show\(this, (?:true|false)\);?)\n[ \t]*\n([ \t]*SplashScreen\.applyPostSplashScreenTheme\(this\);?)/g,
+      /(SplashScreen\.show\(this, (?:true|false), (?:true|false)\);?)\n[ \t]*\n([ \t]*SplashScreen\.applyPostSplashScreenTheme\(this\);?)/g,
       '$1\n$2'
     )
     .replace(
@@ -369,6 +422,7 @@ function withAndroidLaunchScreenLayout(config, options) {
       const resDir = path.join(projectRoot, 'android/app/src/main/res');
       const layoutDir = path.join(resDir, 'layout');
       const layoutPath = path.join(layoutDir, 'launch_screen.xml');
+      const image = copyAndroidImageResource(projectRoot, resDir, options);
 
       if (fs.existsSync(layoutPath) && !options.overwriteAndroidLayout) {
         return config;
@@ -377,7 +431,7 @@ function withAndroidLaunchScreenLayout(config, options) {
       fs.mkdirSync(layoutDir, { recursive: true });
       fs.writeFileSync(
         layoutPath,
-        createAndroidLaunchScreenLayout(projectRoot, resDir, options)
+        createAndroidLaunchScreenLayout(options, image)
       );
 
       return config;
@@ -687,9 +741,8 @@ function upsertAndroidSplashStyle(styles, options) {
   return ['<resources>', splashStyle, '</resources>', ''].join('\n');
 }
 
-function createAndroidLaunchScreenLayout(projectRoot, resDir, options) {
+function createAndroidLaunchScreenLayout(options, image) {
   const background = options.backgroundColor;
-  const image = copyAndroidImageResource(projectRoot, resDir, options);
 
   if (!image) {
     return [
@@ -765,12 +818,33 @@ function copyAndroidImageResource(projectRoot, resDir, options) {
   const destination = path.join(drawableDir, `launch_screen${extension}`);
 
   fs.mkdirSync(drawableDir, { recursive: true });
-  fs.copyFileSync(source, destination);
+  removeOtherAndroidSplashImages(drawableDir, destination);
+  if (path.resolve(source) !== path.resolve(destination)) {
+    fs.copyFileSync(source, destination);
+  }
 
   return {
     resource: '@drawable/launch_screen',
     isNinePatch: extension === '.9.png',
   };
+}
+
+function removeOtherAndroidSplashImages(drawableDir, destination) {
+  const generatedNames = new Set([
+    'launch_screen.png',
+    'launch_screen.9.png',
+    'launch_screen.jpg',
+    'launch_screen.jpeg',
+    'launch_screen.webp',
+    'launch_screen.xml',
+  ]);
+
+  for (const name of generatedNames) {
+    const candidate = path.join(drawableDir, name);
+    if (candidate !== destination) {
+      fs.rmSync(candidate, { force: true });
+    }
+  }
 }
 
 function getAndroidDrawableExtension(filePath) {

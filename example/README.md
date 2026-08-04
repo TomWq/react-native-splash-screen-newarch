@@ -7,7 +7,7 @@ This example app validates the package from the local workspace with:
 - Android fullscreen splash via `SplashScreen.show(this, true)`
 - Android `launch_screen.xml` using `@drawable/launch_screen`
 - iOS `LaunchScreen.storyboard` with `UILaunchStoryboardName=LaunchScreen`
-- JavaScript hide animation using a more visible `scaleFade`
+- JavaScript hide animation using `zoomOutFade` with `easeOut` easing
 
 ## Run
 
@@ -35,7 +35,7 @@ npm run ios
 
 ## Important files
 
-- `App.tsx` calls `SplashScreen.hide({ animation: 'scaleFade', duration: 500, scale: 1.12 })`.
+- `App.tsx` calls `SplashScreen.hide({ animation: 'zoomOutFade', duration: 250, scale: 0.92, easing: 'easeOut' })`.
 - `android/app/src/main/java/com/examples/MainActivity.kt` calls `SplashScreen.show(this, true)` before `super.onCreate`.
 - `android/app/src/main/res/layout/launch_screen.xml` defines the Android splash view.
 - `ios/examples/AppDelegate.swift` imports `rnsplashscreen` and calls `RNSplashScreen.show()`.

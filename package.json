@@ -1,6 +1,6 @@
 {
   "name": "react-native-splash-screen-newarch",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "description": "A full-screen splash screen package for recent React Native apps with New Architecture, bridge fallback, animations, and Expo config plugin support.",
   "main": "./lib/commonjs/index.js",
   "module": "./lib/module/index.js",
@@ -48,7 +48,7 @@
   "scripts": {
     "build": "bob build",
     "clean": "bob clean",
-    "test": "npm run build && node --check index.js && node --check app.plugin.js && node scripts/test-plugin.js",
+    "test": "npm run build && node --check index.js && node --check app.plugin.js && node scripts/test-js.js && node scripts/test-plugin.js",
     "prepare": "bob build",
     "pack:dry-run": "npm pack --dry-run",
     "npm:login": "npm login --auth-type=web --registry=https://registry.npmjs.org/",
@@ -64,7 +64,7 @@
   },
   "keywords": [
     "react-native",
-    "react-native-component",
+    "react-native-splash-screen",
     "splash-screen",
     "splashscreen",
     "splash",
@@ -76,7 +76,8 @@
     "expo-config-plugin",
     "new-architecture",
     "turbo-module",
-    "fullscreen"
+    "fullscreen",
+    "react-native 启动页"
   ],
   "author": "TomWq",
   "license": "MIT",
@@ -84,8 +85,8 @@
     "url": "https://github.com/TomWq/react-native-splash-screen-newarch/issues"
   },
   "peerDependencies": {
-    "expo": "*",
-    "react-native": "*"
+    "expo": ">=52.0.0",
+    "react-native": ">=0.76.0"
   },
   "peerDependenciesMeta": {
     "expo": {
