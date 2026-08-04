@@ -4,85 +4,52 @@
 
 语言：[English](https://github.com/TomWq/react-native-splash-screen-newarch/blob/main/README.md) | [简体中文](https://github.com/TomWq/react-native-splash-screen-newarch/blob/main/README.zh.md)
 
-面向新版 React Native 的全屏启动屏库，基于经典 `react-native-splash-screen` API 升级。
-
-这是一个面向新版 React Native 的全屏启动屏库。它保留熟悉的 `show()` / `hide()` API，支持基于 codegen 的 TurboModule，同时保留非新架构项目可用的 Bridge 兼容层，并内置 Expo config plugin。
+适用于 React Native 和 Expo prebuild 项目的全屏启动屏库。它会在 React Native 启动期间保持原生启动画面可见，并在首屏准备好后将其移除。
 
 ## 功能特性
 
-- 适配新版 React Native，不强制要求 `react-native >= 0.84.0`。
-- 支持 New Architecture / TurboModule，同时保留 Bridge 兼容层。
-- 支持 `hide({ animation })`，可选 `none`、`fade`，以及可调节的 `scaleFade`。
-- Android 可使用 `launch_screen.xml`，也可以在没有 XML layout 时自动回退到原生全屏视图。
-- Android 全屏模式支持 Android P 及以上的刘海屏区域处理。
-- iOS 遵循 Apple 当前的 Launch Screen 模型：在 Xcode 中配置静态启动屏，然后由本库保持显示直到 JS 调用 `hide()`。
-- Expo config plugin 可自动修改 Android `MainActivity`、iOS `AppDelegate`，并可选创建 Android 启动 layout。
+- 通过 React Native codegen 支持 TurboModule，同时为尚未启用新架构的项目提供 Bridge 回退。
+- 提供 `none`、`fade` 和可配置的 `scaleFade` 隐藏过渡。
+- Android 支持 XML layout，也可以自动回退到原生全屏视图。
+- Android 全屏模式支持刘海屏区域处理。
+- iOS 使用原生覆盖层保持 Launch Screen storyboard 可见，直到 JavaScript 调用 `hide()`。
+- 内置 Expo config plugin，可自动完成原生接入和启动资源生成。
 
-## 兼容性
+## 环境要求
 
-- 包版本：`react-native-splash-screen-newarch@2.x`
-- React Native peer dependency：`*`
-- Android：默认 `minSdkVersion` 24
-- iOS：15.1+
-- Expo：仅支持 prebuild / development-client 项目。由于依赖原生代码，不支持 Expo Go。
+| 目标 | 要求 |
+| --- | --- |
+| 包版本 | `react-native-splash-screen-newarch@2.x` |
+| React Native | 不限制固定的 peer 版本；示例工程是本包当前的验证目标。 |
+| Android | 默认 `minSdkVersion` 24。 |
+| iOS | 15.1 及以上。 |
+| Expo | 仅支持 prebuild 或 development build。Expo Go 无法加载这个原生模块。 |
 
-示例工程可以使用较新的 React Native 版本作为验证目标，但发布包本身不会把 peer dependency 锁死到某个具体版本。
+## 快速开始
 
-## 从 1.x 升级到 2.x
-
-2.x 包含原生命名空间和模块名变更。如果你的 App 已经手动接入过 1.x，需要先更新原生文件里的 import，再重新构建。
-
-### 原生 import 变化
-
-| 位置 | 1.x | 2.x |
-| --- | --- | --- |
-| Android Kotlin / Java import | `org.devio.rn.splashscreen.SplashScreen` | `com.tomwq.rnsplashscreen.SplashScreen` |
-| Android library namespace | `org.devio.rn.splashscreen` | `com.tomwq.rnsplashscreen` |
-| iOS Swift import | `import react_native_splash_screen` | `import rnsplashscreen` |
-| iOS Objective-C header | `#import <react_native_splash_screen/RNSplashScreen.h>` | `#import <rnsplashscreen/RNSplashScreen.h>` |
-| CocoaPods spec 文件 | `react-native-splash-screen.podspec` | `react-native-splash-screen-newarch.podspec` |
-
-JavaScript 包引入方式不变：
-
-```ts
-import SplashScreen from 'react-native-splash-screen-newarch';
-```
-
-### 2.x 主要变化
-
-- podspec 文件改名为 `react-native-splash-screen-newarch.podspec`，与当前包名保持一致。
-- Android 不再暴露旧的 `org.devio.rn.splashscreen` 包路径。
-- iOS Swift module 改为 `rnsplashscreen`。
-- `hide(options)` 新增 `fade` 和 `scaleFade` 动画。
-- Android 不再要求这个库使用 AppCompat 主题。
-- Android 在缺少 `launch_screen.xml` 时，可以回退到原生全屏视图。
-- Expo 项目可以使用内置 config plugin，不必手动修改原生文件。
-
-升级后建议重新安装 iOS 原生依赖：
-
-```bash
-cd ios
-pod install
-```
-
-如果 Xcode 或 Gradle 仍然解析到旧的原生符号，可以清理 derived data / build 目录后重新构建 App。
-
-## 安装
+### 1. 安装
 
 ```bash
 npm install react-native-splash-screen-newarch
 ```
 
-React Native CLI 的 iOS 项目安装后需要执行：
+React Native CLI 的 iOS 项目添加依赖后，还需要安装 CocoaPods 依赖：
 
 ```bash
 cd ios
 pod install
 ```
 
-## JavaScript 使用
+### 2. 选择原生接入方式
 
-建议在首屏真正准备好之后再调用 `hide()`。如果过早隐藏启动屏，用户可能会在导航、字体或首屏数据还没完成时看到空白页面。
+| 项目类型 | 接入方式 |
+| --- | --- |
+| Expo prebuild / development build | 使用 [Expo config plugin](#expo-配置)。 |
+| React Native CLI | 根据 App 支持的平台完成 [Android 配置](#android-配置)和 [iOS 配置](#ios-配置)。 |
+
+### 3. 首屏准备好后隐藏启动屏
+
+建议等导航、字体和首屏渲染依赖的数据准备好后，再调用 `hide()`。
 
 ```tsx
 import { useEffect } from 'react';
@@ -90,16 +57,22 @@ import SplashScreen from 'react-native-splash-screen-newarch';
 
 export default function App() {
   useEffect(() => {
-    SplashScreen.hide({ animation: 'scaleFade', duration: 500, scale: 1.12 });
+    SplashScreen.hide({
+      animation: 'scaleFade',
+      duration: 500,
+      scale: 1.12,
+    });
   }, []);
 
   return null;
 }
 ```
 
+如果过早隐藏启动屏，App 启动期间可能会短暂显示空白根视图。
+
 ## Expo 配置
 
-在 `app.json` 或 `app.config.js` 中加入 config plugin，然后执行 `npx expo prebuild` 并重新构建 development client。
+在 `app.json` 或 `app.config.js` 中加入插件。只配置共用图片和背景色，即可生成默认的双端配置：
 
 ```json
 {
@@ -109,28 +82,7 @@ export default function App() {
         "react-native-splash-screen-newarch",
         {
           "image": "./assets/splash.png",
-          "backgroundColor": "#000000",
-          "resizeMode": "contain",
-          "android": {
-            "fullScreen": true,
-            "createLayout": true,
-            "image": "./assets/splash.png",
-            "backgroundColor": "#000000",
-            "imageResizeMode": "centerCrop",
-            "imageWidth": null,
-            "imageHeight": null,
-            "imageGravity": "center",
-            "postSplashScreenTheme": null,
-            "windowIsTranslucent": false
-          },
-          "ios": {
-            "image": "./assets/splash.png",
-            "backgroundColor": "#000000",
-            "resizeMode": "contain",
-            "imageWidth": null,
-            "imageHeight": null,
-            "maxWaitTime": 10
-          }
+          "backgroundColor": "#000000"
         }
       ]
     ]
@@ -138,45 +90,68 @@ export default function App() {
 }
 ```
 
-Plugin 选项：
+生成原生项目并重新构建 App：
+
+```bash
+npx expo prebuild
+npx expo run:android
+# 或
+npx expo run:ios
+```
+
+插件会修改 Android `MainActivity`、iOS `AppDelegate` 和双端启动资源。Android 侧还会保留 Activity 原有的 theme，并在 `super.onCreate()` 前恢复它。
+
+### 共用选项
 
 | 选项 | 默认值 | 说明 |
 | --- | --- | --- |
-| `image` | `null` | Android 和 iOS 共用的启动图；平台专属配置会覆盖它。 |
-| `backgroundColor` | `#000000` | Android 和 iOS 共用的启动背景色；平台专属配置会覆盖它。 |
-| `resizeMode` | `contain` | iOS 共用图片显示模式，可选 `contain` 或 `cover`。 |
-| `android` | `true` | 设为 `false` 可跳过 Android 修改；也可以传对象配置 Android。 |
-| `ios` | `true` | 设为 `false` 可跳过 iOS 修改；也可以传对象配置 iOS。 |
+| `image` | `null` | 双端共用的启动图；平台专属配置会覆盖它。 |
+| `backgroundColor` | `#000000` | 双端共用的启动背景色；平台专属配置会覆盖它。 |
+| `resizeMode` | `contain` | 共用的 iOS 图片显示模式，可选 `contain` 或 `cover`。 |
+| `android` | `true` | 设为 `false` 可跳过 Android，也可以传入 Android 配置对象。 |
+| `ios` | `true` | 设为 `false` 可跳过 iOS，也可以传入 iOS 配置对象。 |
+
+### Android 插件选项
+
+| 选项 | 默认值 | 说明 |
+| --- | --- | --- |
 | `android.fullScreen` | `true` | 在 `MainActivity` 中调用 `SplashScreen.show(this, true)`。 |
-| `android.createLayout` | `true` | 当 Android 缺少 `android/app/src/main/res/layout/launch_screen.xml` 时自动创建，同时生成 Android 12+ 系统启动屏资源和 Activity theme。 |
-| `android.overwriteLayout` | `false` | 允许插件覆盖已有 Android 启动 layout。 |
-| `android.image` | `null` | 将 `.png`、`.9.png`、`.jpg`、`.jpeg`、`.webp` 或 `.xml` 文件复制为 `@drawable/launch_screen`。Android `.9.png` 会保留 `launch_screen.9.png` 文件名，并作为自动生成 layout 的背景使用，确保 NinePatch 拉伸区域生效。 |
-| `android.backgroundColor` | `#000000` | 自动生成 Android 启动 layout 时使用的背景色。 |
-| `android.imageResizeMode` | `centerCrop` | 自动生成 layout 中 `ImageView.scaleType` 的取值。 |
-| `android.imageWidth` | `null` | 可选的 Android 启动图宽度。数字会转成 `dp`；字符串会原样写入，例如 `120dp` 或 `wrap_content`。 |
-| `android.imageHeight` | `null` | 可选的 Android 启动图高度。数字会转成 `dp`；字符串会原样写入。 |
-| `android.imageGravity` | `center` | 自动生成 layout 中 `ImageView.layout_gravity` 的取值。 |
-| `android.postSplashScreenTheme` | 当前 Activity theme | `super.onCreate()` 前恢复的主题，也会用于 `postSplashScreenTheme`。插件默认读取当前 manifest theme；设置该选项可覆盖。 |
-| `android.systemImage` | `false` | 是否把启动图作为 Android 12+ 系统启动屏 icon。全屏图建议保持 `false`，因为 Android 会把这个字段限制为图标尺寸。 |
-| `android.windowIsTranslucent` | `false` | 让 Android 系统 starting window 透明，避免先看到一帧纯色系统启动页。开启前建议在目标机型上测试冷启动、最近任务和后台拉起表现。 |
-| `ios.image` | `null` | 将 `.png`、`.jpg`、`.jpeg` 或 `.pdf` 文件复制到 `Images.xcassets/SplashScreenImage.imageset`。 |
-| `ios.backgroundColor` | `#000000` | 创建 `Images.xcassets/SplashScreenBackground.colorset`，并用于启动 storyboard。 |
-| `ios.resizeMode` | `contain` | `contain` 使用 `scaleAspectFit`，`cover` 使用 `scaleAspectFill`。 |
-| `ios.imageWidth` | `null` | 可选的 iOS 启动图宽度，单位是 point。和 `ios.imageHeight` 一起使用时会生成居中固定尺寸 Logo。 |
-| `ios.imageHeight` | `null` | 可选的 iOS 启动图高度，单位是 point。 |
-| `ios.maxWaitTime` | `10` | iOS 原生 `show()` 最多等待 JavaScript 调用 `hide()` 的秒数；超时后会自动移除覆盖层。 |
+| `android.createLayout` | `true` | 缺少对应文件时，创建 `launch_screen.xml`、Android 12+ 启动资源和 Activity 启动 theme。 |
+| `android.overwriteLayout` | `false` | 允许插件替换已有的 `launch_screen.xml`。 |
+| `android.image` | `null` | Android 专属图片，支持 `.png`、`.9.png`、`.jpg`、`.jpeg`、`.webp` 和 `.xml`。 |
+| `android.backgroundColor` | `#000000` | 自动生成 layout 和系统启动阶段使用的背景色。 |
+| `android.imageResizeMode` | `centerCrop` | 自动生成 layout 使用的 `ImageView.scaleType`。 |
+| `android.imageWidth` | `null` | 可选图片宽度。数字会转成 `dp`；`120dp`、`wrap_content` 等字符串会原样使用。 |
+| `android.imageHeight` | `null` | 可选图片高度，尺寸规则与宽度相同。 |
+| `android.imageGravity` | `center` | 自动生成 layout 使用的 `ImageView.layout_gravity`。 |
+| `android.postSplashScreenTheme` | 当前 Activity theme | 在 `super.onCreate()` 前恢复的主题，同时用于 `postSplashScreenTheme`。 |
+| `android.systemImage` | `false` | 是否把图片用作 Android 12+ 系统启动 icon。全屏图应保持关闭，因为 Android 会限制系统启动 icon 的尺寸。 |
+| `android.windowIsTranslucent` | `false` | 让系统 starting window 透明，避免全屏启动图接管前出现纯色画面。开启前需要验证启动和任务栈表现。 |
 
-Android 侧，生成的 `Theme.App.SplashScreen` 会接住 Android 12+ 最早的系统启动屏阶段。Android 会把 `windowSplashScreenAnimatedIcon` 限制成图标尺寸，所以插件默认让这个 icon 透明，只用配置的背景色接住系统阶段。如果不希望看到这一帧纯色系统页，可以开启 `android.windowIsTranslucent`。插件会读取项目原本的 Activity theme，写入 manifest metadata，并在 `super.onCreate()` 前调用 `SplashScreen.applyPostSplashScreenTheme(this)` 恢复，因此使用自定义 theme 的项目不需要改名成 `AppTheme`。`MainActivity` 启动后，本库再使用全屏 `launch_screen.xml` 继续保持启动屏，直到 JavaScript 调用 `hide()`。
+Android 12 及以上最早的启动阶段始终由系统控制。插件默认使用配置的背景色和透明系统 icon，等 `MainActivity` 启动后再切换到自动生成的全屏 layout。只有当图片适合 Android 受限的系统 icon 区域时，才建议开启 `android.systemImage`。
 
-iOS 侧，插件会把 `UILaunchStoryboardName` 设置为 `SplashScreen`，创建 `SplashScreen.storyboard`，把它加入 Xcode project resources，并插入原生 `RNSplashScreen.show()` 调用。如果没有配置 iOS 图片，生成的 storyboard 只显示配置的背景色。默认情况下图片会按 `ios.resizeMode` 填充启动视图；设置 `ios.imageWidth` 和 `ios.imageHeight` 后会生成居中固定尺寸 Logo。
+### iOS 插件选项
+
+| 选项 | 默认值 | 说明 |
+| --- | --- | --- |
+| `ios.image` | `null` | iOS 专属图片，支持 `.png`、`.jpg`、`.jpeg` 和 `.pdf`。 |
+| `ios.backgroundColor` | `#000000` | 创建并使用 `SplashScreenBackground` 颜色资源。 |
+| `ios.resizeMode` | `contain` | `contain` 对应 `scaleAspectFit`，`cover` 对应 `scaleAspectFill`。 |
+| `ios.imageWidth` | `null` | 可选图片宽度，单位为 point。设置宽高可以生成居中 Logo。 |
+| `ios.imageHeight` | `null` | 可选图片高度，单位为 point。 |
+| `ios.maxWaitTime` | `10` | 原生覆盖层等待 JavaScript 调用 `hide()` 的最长秒数，超时后会自动移除。 |
+
+插件会把 `UILaunchStoryboardName` 设为 `SplashScreen`，创建 storyboard 和 asset catalog 资源，将它们加入 Xcode 工程，并在 `AppDelegate` 中插入 `RNSplashScreen.show()`。
 
 ## Android 配置
 
-如果你不使用 Expo plugin，可以手动添加原生调用。
+本节适用于没有使用 Expo config plugin 的 React Native CLI 项目。
 
-### Kotlin
+### 添加原生启动调用
 
-在 `super.onCreate(savedInstanceState)` 之前调用 `SplashScreen.show(this, true)`。
+在 `super.onCreate(savedInstanceState)` 之前调用 `SplashScreen.show(this, true)`。如果启动屏不需要延伸到刘海屏区域，可以把 `true` 改为 `false`。
+
+Kotlin：
 
 ```kotlin
 import android.os.Bundle
@@ -191,7 +166,7 @@ class MainActivity : ReactActivity() {
 }
 ```
 
-### Java
+Java：
 
 ```java
 import android.os.Bundle;
@@ -207,9 +182,9 @@ public class MainActivity extends ReactActivity {
 }
 ```
 
-### Android 启动 Layout
+### 添加启动画面
 
-库会优先查找 `android/app/src/main/res/layout/launch_screen.xml`。如果这个 layout 存在，就使用它作为全屏启动内容。
+本库会优先查找 `android/app/src/main/res/layout/launch_screen.xml`：
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -226,7 +201,7 @@ public class MainActivity extends ReactActivity {
 </FrameLayout>
 ```
 
-如果使用 Android `.9.png`，请把 drawable 用作 View 的背景，而不是 `ImageView android:src`，这样 NinePatch 拉伸区域才会生效：
+如果使用 `.9.png`，应把 drawable 设为 View 的背景，让 Android 正确处理 NinePatch 拉伸区域：
 
 ```xml
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -235,119 +210,72 @@ public class MainActivity extends ReactActivity {
     android:background="@drawable/launch_screen" />
 ```
 
-### Android 无 XML 回退
-
-如果不存在 `launch_screen.xml`，库会在运行时创建一个轻量的原生 `FrameLayout`。随后会先查找 `drawable` 中名为 `launch_screen` 的资源，再查找 `mipmap`。
-
-推荐的回退资源路径：
+如果 XML layout 不存在，本库会创建原生全屏视图，并依次在 `drawable`、`mipmap` 中查找 `launch_screen`。推荐的回退资源路径是：
 
 ```text
 android/app/src/main/res/drawable/launch_screen.png
 ```
 
-如果既没有 layout，也没有图片资源，Android 会显示全屏黑色背景，直到 `hide()` 执行。
+如果 layout 和图片资源都不存在，回退视图会显示黑色背景，直到执行 `hide()`。
 
-### Android 12+ 系统启动屏说明
+### Android 12 及以上
 
-Android 12 及以上最早的系统启动屏阶段由系统控制。本库会在 `Activity` 创建后接管显示，因此可以在 React Native 启动期间展示全屏 layout 或图片。Expo 项目可以通过插件选项 `android.windowIsTranslucent` 避免在本库接管前先看到一帧纯色系统页。
-
-手动配置 Android 项目时，可以测试等价的启动 theme 配置：
+本库控制的是 Activity 启动后的全屏视图；更早的系统启动阶段仍由 Android 控制。请通过 App 的 launch theme 配置该阶段。如果需要消除本库接管前的纯色画面，可以测试以下 theme 配置：
 
 ```xml
 <item name="android:windowIsTranslucent">true</item>
 ```
 
-这个方案需要在目标 Android 版本上测试冷启动、返回栈、最近任务和主题切换表现后再使用。
+透明 starting window 可能影响冷启动、最近任务、后台拉起和主题切换，需要在 App 支持的 Android 版本上实际验证。
 
-本库内部不要求 AppCompat。不过宿主 App 的主题仍然必须匹配你的 `Activity` 基类。如果你的 React Native 模板使用的是基于 AppCompat 的 `ReactActivity`，App 主题需要继续继承 AppCompat，例如 `Theme.AppCompat.DayNight.NoActionBar`；否则 Android 会因为 `You need to use a Theme.AppCompat theme (or descendant) with this activity.` 崩溃。
+本库自身不依赖 AppCompat，但 App theme 仍需与 `Activity` 基类匹配。基于 AppCompat 的 `ReactActivity` 应使用 `Theme.AppCompat.DayNight.NoActionBar` 等 AppCompat 子主题。
 
 ## iOS 配置
 
-iOS 的启动屏是系统静态 UI。Apple 期望启动屏通过 storyboard 或 launch screen 文件定义，并由 `UILaunchStoryboardName` 指定；系统启动屏内部不会执行自定义代码、网络请求、计时器或运行时动画。
+本节适用于没有使用 Expo config plugin 的 React Native CLI 项目。
 
-本库与这个模型的关系是：
+iOS 启动屏是系统静态 UI，本库按以下流程工作：
 
-1. Xcode 先渲染静态的 `LaunchScreen.storyboard`。
-2. `RNSplashScreen.show()` 会根据 `UILaunchStoryboardName` 创建一份启动 storyboard overlay window，并在 React Native 加载期间保持它可见。
-3. JavaScript 首屏准备好后调用 `SplashScreen.hide()`，这层覆盖视图会按指定动画移除。
+1. App 启动时，iOS 渲染 `UILaunchStoryboardName` 指定的 storyboard。
+2. React Native 加载期间，`RNSplashScreen.show()` 使用同一个 storyboard 创建原生覆盖层。
+3. 首屏准备好后，JavaScript 调用 `SplashScreen.hide()` 移除覆盖层。
 
-### 在 Xcode 中配置启动图
+### 配置 Launch Screen storyboard
 
 1. 用 Xcode 打开 `ios/YourApp.xcworkspace`。
-2. 将启动图放入 `Assets.xcassets`。可以创建 `SplashLogo` 这样的 Logo Image Set，也可以创建 `LaunchScreenBackground` 这样的全屏背景图。
-3. 打开 `LaunchScreen.storyboard`。如果项目里没有这个文件，新建一个名为 `LaunchScreen.storyboard` 的 storyboard。
-4. 设置根视图背景色，让它与品牌色或 App 首屏背景一致。
-5. 添加 `Image View`，用于显示 Logo 或全屏背景图。
-6. 如果是居中 Logo，将 Image View 约束到根视图中心，并设置明确的宽高约束。
-7. 如果是一整张全屏图，将 Image View 四边约束到根视图边缘，并把 content mode 设置为 `Aspect Fill`。
-8. 选中 App target，进入 `General` > `App Icons and Launch Screen`，将 `Launch Screen File` 设置为 `LaunchScreen`。
-9. 如果你手动维护 `Info.plist`，确认 `UILaunchStoryboardName` 的值为 `LaunchScreen`。
-10. 确认 storyboard 和图片资源都勾选了当前 App target membership。
+2. 将启动图加入 `Assets.xcassets`。
+3. 新建或打开 `LaunchScreen.storyboard`，设置背景并添加 Image View。
+4. 居中 Logo 需要设置居中约束和固定宽高；全屏图需要约束到四边，并使用 `Aspect Fill`。
+5. 在 App target 中把 `General` > `App Icons and Launch Screen` > `Launch Screen File` 设为 `LaunchScreen`。如果手动维护 `Info.plist`，则把 `UILaunchStoryboardName` 设为 `LaunchScreen`。
+6. 确认 storyboard 和图片资源都属于当前 App target。
 
-开发阶段 iOS 可能缓存启动屏资源。如果修改后没有生效，可以从模拟器或真机删除 App，清理构建缓存后重新安装。
+iOS 会缓存启动屏资源。如果修改后没有生效，请从模拟器或真机删除 App，清理构建目录后重新安装。
 
-iOS 侧的 `fade` 和 `scaleFade` 动画作用在这层由启动 storyboard 复制出来的 overlay window 上。系统 Launch Screen 本身是静态的，不能执行自定义动画。
+### 添加原生启动调用
 
-### Swift AppDelegate
-
-引入模块：
+Swift `AppDelegate` 需要引入模块，并在 React Native 启动之后、启动方法返回之前调用 `RNSplashScreen.show()`：
 
 ```swift
 import rnsplashscreen
+
+// 放在 factory.startReactNative(...) 之后
+RNSplashScreen.show()
+return true
 ```
 
-在 React Native 启动之后、`application(_:didFinishLaunchingWithOptions:)` 返回之前调用 `RNSplashScreen.show()`。
-
-```swift
-import UIKit
-import React
-import React_RCTAppDelegate
-import ReactAppDependencyProvider
-import rnsplashscreen
-
-@main
-class AppDelegate: UIResponder, UIApplicationDelegate {
-  var window: UIWindow?
-  var reactNativeDelegate: ReactNativeDelegate?
-  var reactNativeFactory: RCTReactNativeFactory?
-
-  func application(
-    _ application: UIApplication,
-    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
-  ) -> Bool {
-    let delegate = ReactNativeDelegate()
-    let factory = RCTReactNativeFactory(delegate: delegate)
-    delegate.dependencyProvider = RCTAppDependencyProvider()
-
-    reactNativeDelegate = delegate
-    reactNativeFactory = factory
-
-    window = UIWindow(frame: UIScreen.main.bounds)
-
-    factory.startReactNative(
-      withModuleName: "YourAppName",
-      in: window,
-      launchOptions: launchOptions
-    )
-
-    RNSplashScreen.show()
-    return true
-  }
-}
-```
-
-### Objective-C AppDelegate
+Objective-C 或 Objective-C++ `AppDelegate`：
 
 ```objc
 #import <rnsplashscreen/RNSplashScreen.h>
-```
 
-在 `application:didFinishLaunchingWithOptions:` 返回 `YES` 之前调用：
-
-```objc
+// 放在 application:didFinishLaunchingWithOptions: 返回之前
 [RNSplashScreen show];
 return YES;
 ```
+
+原生覆盖层默认最多等待 JavaScript 10 秒。手动配置项目可以在 `Info.plist` 中把 `RNSplashScreenMaxWaitTime` 设为非负秒数，以修改该限制。
+
+系统 Launch Screen 本身不能执行动画。iOS 上的 `fade` 和 `scaleFade` 作用于根据启动 storyboard 创建的原生覆盖层。
 
 ## API
 
@@ -364,36 +292,49 @@ SplashScreen.show(): void;
 SplashScreen.hide(options?: HideOptions): void;
 ```
 
-`duration` 的单位是毫秒。`scale` 只对 `scaleFade` 生效，并会被限制在 `1.0` - `1.3` 之间。
+| 选项 | 默认值 | 说明 |
+| --- | --- | --- |
+| `animation` | `none` | 隐藏过渡，可选 `none`、`fade` 或 `scaleFade`。 |
+| `duration` | `none` 为 `0`；动画过渡为 `400` | 过渡时长，单位为毫秒。负数会被规范化为 `0`。 |
+| `scale` | `scaleFade` 为 `1.08` | `scaleFade` 的目标缩放值，取值会被限制在 `1.0` 到 `1.3`。 |
 
-| 调用 | 行为 |
-| --- | --- |
-| `SplashScreen.hide()` | 立即隐藏。 |
-| `SplashScreen.hide({ animation: 'none' })` | 立即隐藏。 |
-| `SplashScreen.hide({ animation: 'fade' })` | 使用默认 `400ms` 淡出。 |
-| `SplashScreen.hide({ animation: 'scaleFade' })` | 使用默认 `400ms` 淡出，并放大到 `1.08`。 |
-| `SplashScreen.hide({ animation: 'scaleFade', duration: 500, scale: 1.12 })` | 使用更明显的缩放淡出过渡。 |
+示例：
 
-Android 侧隐藏动画会作用在启动屏内容 View 上。Dialog window 本身是透明的，并且没有 dim 蒙层，所以 App 内容会直接出现在正在淡出的启动屏后面，不会先闪出一层黑色 Dialog 背景。
+```ts
+SplashScreen.hide();
+SplashScreen.hide({ animation: 'fade' });
+SplashScreen.hide({ animation: 'scaleFade', duration: 500, scale: 1.12 });
+```
 
-iOS 侧隐藏动画会作用在 `RNSplashScreen.show()` 添加到 App window 上方的启动 storyboard overlay window。
+`SplashScreen.show()` 会使用 App 已配置的平台资源再次显示原生启动视图。正常启动流程是在 JavaScript 加载前通过 Android/iOS 原生代码显示启动屏，再由 JavaScript 的 `hide()` 将其移除。
+
+Android 的隐藏动画作用于透明 Dialog window 上的启动内容 View；iOS 的隐藏动画作用于 Launch Screen storyboard 覆盖层。
 
 ## 常见问题
 
-- iOS 找不到 `rnsplashscreen`：执行 `cd ios && pod install`，然后清理并重新构建 App。
-- iOS 启动图修改后不生效：iOS 可能缓存 Launch Screen 资源，可以从模拟器或真机删除 App 后重新安装。
-- Android 图片没有显示：确认资源名是 `launch_screen`，并放在 `drawable`、`mipmap`，或在 `layout/launch_screen.xml` 中引用。
-- Expo 配置没有生效：重新执行 `npx expo prebuild`，并重新构建原生 App 或 development client。
-- 启动屏隐藏过早：把 `SplashScreen.hide()` 移到导航、字体、首屏数据准备完成之后。
+| 问题 | 检查项 |
+| --- | --- |
+| 原生模块不可用 | 安装后需要重新构建原生 App；不支持 Expo Go。 |
+| iOS 找不到 `rnsplashscreen` | 执行 `cd ios && pod install`，然后清理并重新构建 App。 |
+| iOS 启动图修改后不生效 | 删除已安装的 App，再清理、构建并重新安装。 |
+| Android 启动图没有显示 | 在 `layout`、`drawable` 或 `mipmap` 中使用准确的资源名 `launch_screen`。 |
+| Android 报 AppCompat theme 错误 | 确认宿主 App theme 与 `ReactActivity` 基类兼容。 |
+| Expo 插件配置没有生效 | 重新执行 `npx expo prebuild`，并重新构建 development client。 |
+| 启动时出现空白画面 | 将 `SplashScreen.hide()` 延后到首屏可以渲染之后。 |
 
-## 参考
+## 示例工程
+
+- [React Native CLI 示例](https://github.com/TomWq/react-native-splash-screen-newarch/blob/main/example/README.md)
+- [Expo prebuild 示例](https://github.com/TomWq/react-native-splash-screen-newarch/blob/main/expo-example/README.md)
+
+## 参考资料
 
 - [Apple Human Interface Guidelines: Launching](https://developer.apple.com/design/human-interface-guidelines/launching)
 - [Apple Info.plist key: UILaunchStoryboardName](https://developer.apple.com/documentation/bundleresources/information-property-list/uilaunchstoryboardname)
 
 ## 致谢
 
-感谢 [crazycodeboy/react-native-splash-screen](https://github.com/crazycodeboy/react-native-splash-screen)，本库的经典 API 兼容和升级方向参考了它的设计。
+感谢 [crazycodeboy/react-native-splash-screen](https://github.com/crazycodeboy/react-native-splash-screen)，本包的 API 和实现从中获得了启发。
 
 ## License
 
