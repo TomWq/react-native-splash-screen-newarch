@@ -5,6 +5,10 @@ description: 排查 Expo config plugin、原生模块、Android 主题、iOS 启
 
 # 故障排查
 
+## Android 找不到 `org.devio.rn.splashscreen`
+
+如果错误包含 `Unresolved reference 'devio'`、`SplashScreen` 或 `SplashScreenReactPackage`，通常是 1.x 的 Android import 没有迁移到 2.x。将 `org.devio.rn.splashscreen` 改为 `com.tomwq.rnsplashscreen`。当前 React Native 模板会自动链接本包，通常还应删除手动添加的 `SplashScreenReactPackage`，避免重复注册。修改后清理并重新构建 Android App。
+
 ## 原生模块不可用
 
 典型提示：

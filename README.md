@@ -31,6 +31,28 @@ A full-screen splash screen for React Native and Expo prebuild projects. It keep
 
 The CI compatibility matrix covers the minimum React Native 0.76 line with both the Legacy and New Architectures, the latest stable React Native with the New Architecture, the CLI example on iOS, and a clean Expo prebuild plus Android build. React Native 0.82 and newer are New Architecture only.
 
+## Upgrading from 1.x
+
+Version 2.x changed the native package names. If an Android build reports unresolved references to `devio`, `SplashScreen`, or `SplashScreenReactPackage`, the app is still using the 1.x import path.
+
+Update the Android imports:
+
+| Area | 1.x | 2.x |
+| --- | --- | --- |
+| Android Kotlin / Java import | `org.devio.rn.splashscreen.SplashScreen` | `com.tomwq.rnsplashscreen.SplashScreen` |
+| Android package import | `org.devio.rn.splashscreen.SplashScreenReactPackage` | `com.tomwq.rnsplashscreen.SplashScreenReactPackage` |
+| Android library namespace | `org.devio.rn.splashscreen` | `com.tomwq.rnsplashscreen` |
+| iOS Swift import | `import react_native_splash_screen` | `import rnsplashscreen` |
+| iOS Objective-C header | `#import <react_native_splash_screen/RNSplashScreen.h>` | `#import <rnsplashscreen/RNSplashScreen.h>` |
+
+The JavaScript import stays the same:
+
+```ts
+import SplashScreen from 'react-native-splash-screen-newarch';
+```
+
+With the current React Native templates, the package is autolinked. Remove a manually added `SplashScreenReactPackage` entry unless your project specifically requires manual package registration. After changing native imports, rebuild the app; for iOS CLI projects also run `pod install`.
+
 ## Quick Start
 
 ### 1. Install the package

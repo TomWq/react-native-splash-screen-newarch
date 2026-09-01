@@ -31,6 +31,28 @@
 
 CI 兼容矩阵会验证最低 React Native 0.76 的旧架构和新架构、最新稳定版 React Native 的新架构、CLI 示例的 iOS 构建，以及 Expo clean prebuild 后的 Android 构建。React Native 0.82 及以上仅提供新架构。
 
+## 从 1.x 升级
+
+2.x 修改了原生包名。如果 Android 编译报 `devio`、`SplashScreen` 或 `SplashScreenReactPackage` 找不到，说明 App 仍在使用 1.x 的 import 路径。
+
+请更新 Android import：
+
+| 位置 | 1.x | 2.x |
+| --- | --- | --- |
+| Android Kotlin / Java import | `org.devio.rn.splashscreen.SplashScreen` | `com.tomwq.rnsplashscreen.SplashScreen` |
+| Android package import | `org.devio.rn.splashscreen.SplashScreenReactPackage` | `com.tomwq.rnsplashscreen.SplashScreenReactPackage` |
+| Android library namespace | `org.devio.rn.splashscreen` | `com.tomwq.rnsplashscreen` |
+| iOS Swift import | `import react_native_splash_screen` | `import rnsplashscreen` |
+| iOS Objective-C header | `#import <react_native_splash_screen/RNSplashScreen.h>` | `#import <rnsplashscreen/RNSplashScreen.h>` |
+
+JavaScript import 不变：
+
+```ts
+import SplashScreen from 'react-native-splash-screen-newarch';
+```
+
+当前 React Native 模板会自动链接本包。除非项目确实需要手动注册，否则请删除手动添加的 `SplashScreenReactPackage`；否则可能与自动链接的包重复注册。更新原生 import 后重新构建 App；React Native CLI iOS 项目还需要执行 `pod install`。
+
 ## 快速开始
 
 ### 1. 安装

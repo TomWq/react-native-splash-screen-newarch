@@ -16,6 +16,16 @@ description: Check React Native, Expo, Android, and iOS support, then choose And
 
 React Native 0.82 and newer only provide the New Architecture. The package keeps the same JavaScript API across the TurboModule and Bridge fallback paths.
 
+## Upgrading from 1.x
+
+Version 2.x changed the native Android and iOS package names. If Android reports `Unresolved reference 'devio'`, `SplashScreen`, or `SplashScreenReactPackage`, update the old import to:
+
+```kotlin
+import com.tomwq.rnsplashscreen.SplashScreen
+```
+
+If the project manually registers `SplashScreenReactPackage`, update it to `com.tomwq.rnsplashscreen.SplashScreenReactPackage`. Current React Native templates usually autolink the package, so remove the manual registration unless the project specifically needs it. Clean and rebuild the native app after updating the imports.
+
 ## Android mode comparison
 
 | Capability | `system` | `dialog` (default) |

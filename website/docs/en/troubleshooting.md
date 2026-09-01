@@ -5,6 +5,10 @@ description: Diagnose Expo config plugin, native module, Android theme, iOS cach
 
 # Troubleshooting
 
+## Android cannot resolve `org.devio.rn.splashscreen`
+
+Errors containing `Unresolved reference 'devio'`, `SplashScreen`, or `SplashScreenReactPackage` usually mean that the project still has the 1.x Android imports. Replace `org.devio.rn.splashscreen` with `com.tomwq.rnsplashscreen`. Current React Native templates autolink the package, so manual `SplashScreenReactPackage` registration should usually be removed to avoid duplicate registration. Clean and rebuild the Android app after changing the imports.
+
 ## Native module is unavailable
 
 Typical message:

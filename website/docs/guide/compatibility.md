@@ -16,6 +16,16 @@ description: 查看 React Native、Expo、Android 和 iOS 的支持范围，并�
 
 React Native 0.82 及以上只提供新架构。本包的 JavaScript API 在 TurboModule 和 Bridge 回退路径中保持一致。
 
+## 从 1.x 升级
+
+2.x 修改了 Android 和 iOS 的原生包名。若 Android 出现 `Unresolved reference 'devio'`、`SplashScreen` 或 `SplashScreenReactPackage`，请将旧 import 更新为：
+
+```kotlin
+import com.tomwq.rnsplashscreen.SplashScreen
+```
+
+如果项目手动注册了 `SplashScreenReactPackage`，也请改为 `com.tomwq.rnsplashscreen.SplashScreenReactPackage`；使用当前 React Native 模板时通常可以直接删除这段手动注册，因为本包会自动链接。更新后清理并重新构建原生 App。
+
 ## Android 模式对比
 
 | 能力 | `system` | `dialog`（默认） |
